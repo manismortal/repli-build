@@ -21,23 +21,30 @@ export default function AuthPage() {
 
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
-    // Simulate network delay
+    const formData = new FormData(e.currentTarget);
+    const mobile = formData.get("mobile") as string;
+    const password = formData.get("password") as string;
+    
     setTimeout(() => {
-      const form = e.target as HTMLFormElement;
-      login(form.mobile.value, form.password.value);
+      login(mobile, password);
       setIsLoading(false);
     }, 1000);
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get("name") as string;
+    const mobile = formData.get("mobile") as string;
+    const password = formData.get("password") as string;
+    const referral = formData.get("referral") as string;
+    
     setTimeout(() => {
-      const form = e.target as HTMLFormElement;
-      register(form.name.value, form.mobile.value, form.password.value, form.referral.value);
+      register(name, mobile, password, referral);
       setIsLoading(false);
     }, 1000);
   };

@@ -1,178 +1,124 @@
 import { useAuth } from "@/lib/auth";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Link } from "wouter";
-import { 
-  ArrowUpRight, 
-  ArrowDownLeft, 
-  Wallet, 
-  TrendingUp, 
-  Users, 
-  CheckSquare 
-} from "lucide-react";
-import { Area, AreaChart, CartesianGrid, XAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { TrendingUp, Lock, Wallet, Users } from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 const chartData = [
-  { day: "Mon", income: 120 },
-  { day: "Tue", income: 150 },
-  { day: "Wed", income: 180 },
-  { day: "Thu", income: 140 },
-  { day: "Fri", income: 200 },
-  { day: "Sat", income: 250 },
-  { day: "Sun", income: 300 },
+  { date: "Day 1", balance: 1200 },
+  { date: "Day 2", balance: 1350 },
+  { date: "Day 3", balance: 1500 },
+  { date: "Day 4", balance: 1480 },
+  { date: "Day 5", balance: 1650 },
+  { date: "Day 6", balance: 1750 },
 ];
 
 export default function Dashboard() {
   const { user } = useAuth();
 
-  if (!user) return null;
-
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-heading font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground">Welcome back, {user.name}</p>
-        </div>
-        <div className="flex gap-2 w-full md:w-auto">
-          <Link href="/wallet" className="flex-1 md:flex-none">
-            <Button className="w-full md:w-auto gap-2">
-              <ArrowUpRight className="h-4 w-4" /> Deposit
-            </Button>
-          </Link>
-          <Link href="/wallet" className="flex-1 md:flex-none">
-            <Button variant="outline" className="w-full md:w-auto gap-2">
-              <ArrowDownLeft className="h-4 w-4" /> Withdraw
-            </Button>
-          </Link>
-        </div>
+    <div className="space-y-8 animate-in fade-in duration-500">
+      {/* Welcome Section */}
+      <div>
+        <h1 className="text-4xl font-heading font-bold mb-2">Welcome back, {user?.name}</h1>
+        <p className="text-muted-foreground text-lg">Your investment dashboard</p>
       </div>
 
-      {/* Stats Grid */}
+      {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground border-none">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium opacity-80 uppercase tracking-wider">Total Balance</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold font-heading">৳ {user.balance.toFixed(2)}</div>
-            <div className="text-xs opacity-70 mt-1">Available for withdrawal</div>
+        <Card className="hover-elevate">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-muted-foreground text-sm font-medium">Balance</span>
+              <Wallet className="h-4 w-4 text-primary" />
+            </div>
+            <p className="text-3xl font-bold font-heading">৳{user?.balance.toFixed(2)}</p>
+            <p className="text-xs text-muted-foreground mt-1">Available to invest</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Locked Assets</CardTitle>
-            <Wallet className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-heading">৳ {user.lockedBalance.toFixed(2)}</div>
-            <div className="text-xs text-muted-foreground mt-1">Investment maturity in 12 days</div>
+        <Card className="hover-elevate">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-muted-foreground text-sm font-medium">Locked Balance</span>
+              <Lock className="h-4 w-4 text-accent" />
+            </div>
+            <p className="text-3xl font-bold font-heading">৳{user?.lockedBalance.toFixed(2)}</p>
+            <p className="text-xs text-muted-foreground mt-1">In active investments</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Daily Income</CardTitle>
-            <TrendingUp className="h-4 w-4 text-accent" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-heading">৳ 450.00</div>
-            <div className="text-xs text-green-600 mt-1 font-medium">+12% from yesterday</div>
+        <Card className="hover-elevate">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-muted-foreground text-sm font-medium">Total Growth</span>
+              <TrendingUp className="h-4 w-4 text-green-600" />
+            </div>
+            <p className="text-3xl font-bold font-heading">৳{(user?.balance! + user?.lockedBalance!).toFixed(2)}</p>
+            <p className="text-xs text-green-600 mt-1">+12.5% this month</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Team Income</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-heading">৳ 1,250.00</div>
-            <div className="text-xs text-muted-foreground mt-1">From 12 active members</div>
+        <Card className="hover-elevate">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-muted-foreground text-sm font-medium">Referral Bonus</span>
+              <Users className="h-4 w-4 text-purple-600" />
+            </div>
+            <p className="text-3xl font-bold font-heading">৳2,450</p>
+            <p className="text-xs text-muted-foreground mt-1">From 5 active referrals</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Main Content Grid */}
-      <div className="grid md:grid-cols-3 gap-8">
-        
-        {/* Chart Section */}
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle>Income Overview</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData}>
-                  <defs>
-                    <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                  <XAxis 
-                    dataKey="day" 
-                    stroke="hsl(var(--muted-foreground))" 
-                    fontSize={12} 
-                    tickLine={false} 
-                    axisLine={false}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--card))', 
-                      borderColor: 'hsl(var(--border))',
-                      borderRadius: 'var(--radius)' 
-                    }}
-                    itemStyle={{ color: 'hsl(var(--foreground))' }}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="income" 
-                    stroke="hsl(var(--primary))" 
-                    strokeWidth={2}
-                    fillOpacity={1} 
-                    fill="url(#colorIncome)" 
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Daily Tasks Shortcut */}
-        <Card className="bg-sidebar text-sidebar-foreground relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-4 opacity-10">
-            <CheckSquare className="h-32 w-32" />
-          </div>
-          <CardHeader>
-            <CardTitle className="text-xl">Daily Tasks</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6 relative z-10">
+      {/* Account Status */}
+      <Card className="hover-elevate">
+        <CardHeader>
+          <CardTitle className="font-heading text-2xl">Account Status</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between p-4 bg-secondary/50 rounded-lg border">
             <div>
-              <div className="flex justify-between text-sm mb-2">
-                <span>Progress</span>
-                <span>2/5 Completed</span>
-              </div>
-              <div className="h-2 bg-white/20 rounded-full overflow-hidden">
-                <div className="h-full bg-accent w-[40%]" />
-              </div>
+              <p className="font-semibold text-sm">Account Status</p>
+              <p className="text-xs text-muted-foreground">Your account is active and verified</p>
             </div>
-            <div className="space-y-2">
-              <p className="text-sm opacity-80">Complete all tasks to unlock today's bonus of ৳50.00</p>
-              <Link href="/tasks">
-                <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90 border-none font-bold">
-                  Continue Tasks
-                </Button>
-              </Link>
+            <Badge className="bg-green-600 text-white">Active</Badge>
+          </div>
+          <div className="flex items-center justify-between p-4 bg-secondary/50 rounded-lg border">
+            <div>
+              <p className="font-semibold text-sm">Member Since</p>
+              <p className="text-xs text-muted-foreground">45 days ago</p>
             </div>
-          </CardContent>
-        </Card>
+            <Badge variant="outline">VERIFIED</Badge>
+          </div>
+          <div className="flex items-center justify-between p-4 bg-secondary/50 rounded-lg border">
+            <div>
+              <p className="font-semibold text-sm">Referral Code</p>
+              <p className="text-xs text-muted-foreground font-mono text-primary">{user?.referralCode}</p>
+            </div>
+            <Badge variant="secondary">COPY CODE</Badge>
+          </div>
+        </CardContent>
+      </Card>
 
-      </div>
+      {/* Balance Chart */}
+      <Card className="hover-elevate">
+        <CardHeader>
+          <CardTitle className="font-heading text-2xl">Balance Trend</CardTitle>
+          <CardDescription>Your account balance over the last 6 days</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" />
+              <YAxis stroke="hsl(var(--muted-foreground))" />
+              <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }} />
+              <Line type="monotone" dataKey="balance" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ fill: "hsl(var(--primary))", r: 4 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
     </div>
   );
 }
