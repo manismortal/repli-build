@@ -1,4 +1,5 @@
 import { useAuth } from "@/lib/auth";
+import { Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Wallet, ArrowDownLeft, ArrowUpRight, History, CreditCard, Banknote } from "lucide-react";
@@ -23,10 +24,12 @@ export default function WalletPage() {
           </div>
           
           <div className="grid grid-cols-2 gap-4 mt-8">
-            <Button className="w-full h-12 rounded-xl font-heading shadow-lg shadow-primary/20">
-              <ArrowDownLeft className="h-4 w-4 mr-2" />
-              DEPOSIT
-            </Button>
+            <Link href="/payment/bkash" className="w-full">
+              <Button className="w-full h-12 rounded-xl font-heading shadow-lg shadow-primary/20">
+                <ArrowDownLeft className="h-4 w-4 mr-2" />
+                DEPOSIT
+              </Button>
+            </Link>
             <Button variant="secondary" className="w-full h-12 rounded-xl font-heading bg-sidebar-accent/50 hover:bg-sidebar-accent border border-white/10">
               <ArrowUpRight className="h-4 w-4 mr-2" />
               WITHDRAW

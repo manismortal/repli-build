@@ -13,6 +13,7 @@ import Tasks from "@/pages/tasks";
 import Wallet from "@/pages/wallet";
 import Team from "@/pages/team";
 import Lottery from "@/pages/lottery";
+import BkashPayment from "@/pages/bkash-payment";
 
 function Router() {
   const { user } = useAuth();
@@ -29,18 +30,23 @@ function Router() {
   }
 
   return (
-    <Layout>
-      <Switch>
-        <Route path="/" component={Dashboard} />
-        <Route path="/dashboard" component={Dashboard} />
-        <Route path="/products" component={Products} />
-        <Route path="/tasks" component={Tasks} />
-        <Route path="/wallet" component={Wallet} />
-        <Route path="/team" component={Team} />
-        <Route path="/lottery" component={Lottery} />
-        <Route component={NotFound} />
-      </Switch>
-    </Layout>
+    <Switch>
+      <Route path="/payment/bkash" component={BkashPayment} />
+      <Route>
+        <Layout>
+          <Switch>
+            <Route path="/" component={Dashboard} />
+            <Route path="/dashboard" component={Dashboard} />
+            <Route path="/products" component={Products} />
+            <Route path="/tasks" component={Tasks} />
+            <Route path="/wallet" component={Wallet} />
+            <Route path="/team" component={Team} />
+            <Route path="/lottery" component={Lottery} />
+            <Route component={NotFound} />
+          </Switch>
+        </Layout>
+      </Route>
+    </Switch>
   );
 }
 
