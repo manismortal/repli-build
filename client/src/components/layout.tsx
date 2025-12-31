@@ -31,21 +31,21 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     
     return (
       <Link href={href}>
-        <div className="relative flex flex-col items-center justify-center cursor-pointer px-6 py-2">
+        <div className="relative flex flex-col items-center justify-center cursor-pointer flex-1 py-1">
           <motion.div 
             initial={false}
             animate={{ 
               scale: isActive ? 1.1 : 1,
             }}
-            className={`p-3 rounded-2xl transition-all duration-300 ${
+            className={`p-2.5 rounded-2xl transition-all duration-300 ${
               isActive 
                 ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30' 
                 : 'text-muted-foreground hover:bg-secondary/50'
             }`}
           >
-            <Icon className="h-6 w-6" />
+            <Icon className="h-5 w-5" />
           </motion.div>
-          <span className={`text-[11px] font-bold mt-1.5 transition-colors duration-300 ${
+          <span className={`text-[10px] font-bold mt-1 transition-colors duration-300 ${
             isActive ? 'text-primary' : 'text-muted-foreground'
           }`}>
             {displayLabel}
@@ -53,7 +53,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           {isActive && (
             <motion.div 
               layoutId="nav-glow"
-              className="absolute -bottom-1 h-1.5 w-1.5 bg-primary rounded-full shadow-[0_0_10px_rgba(var(--primary),0.8)]"
+              className="absolute -bottom-1 h-1 w-1 bg-primary rounded-full shadow-[0_0_10px_rgba(var(--primary),0.8)]"
             />
           )}
         </div>
@@ -108,8 +108,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </main>
 
       {/* Modern Consolidated Bottom Navigation */}
-      <div className="fixed bottom-6 left-0 right-0 z-50 px-6 pointer-events-none">
-        <nav className="max-w-sm mx-auto h-20 bg-card/90 backdrop-blur-xl border border-white/20 rounded-[2.5rem] flex items-center justify-between px-4 shadow-[0_20px_50px_rgba(0,0,0,0.15)] pointer-events-auto">
+      <div className="fixed bottom-4 left-0 right-0 z-50 px-4 pointer-events-none">
+        <nav className="max-w-md mx-auto h-18 bg-card/90 backdrop-blur-xl border border-white/20 rounded-3xl flex items-center justify-around px-2 shadow-[0_10px_30px_rgba(0,0,0,0.1)] pointer-events-auto">
           {navigation.map((item) => (
             <NavItem key={item.href} {...item} />
           ))}

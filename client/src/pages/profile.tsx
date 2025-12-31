@@ -10,8 +10,8 @@ import {
   LogOut, 
   ShieldCheck,
   User as UserIcon,
-  CreditCard,
-  Briefcase
+  Briefcase,
+  FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
@@ -30,6 +30,8 @@ export default function Profile() {
     teamSub: language === "bn" ? "রেফারেল এবং ইনকাম" : "Referrals and earnings",
     settings: language === "bn" ? "অ্যাকাউন্ট সেটিংস" : "Account Settings",
     settingsSub: language === "bn" ? "প্রোফাইল আপডেট করুন" : "Update your profile",
+    tc: language === "bn" ? "শর্তাবলী" : "Terms and Conditions",
+    tcSub: language === "bn" ? "প্ল্যাটফর্মের নিয়মাবলী দেখুন" : "View platform guidelines",
     logout: language === "bn" ? "লগ আউট" : "Logout",
     verify: language === "bn" ? "ভেরিফাইড অ্যাকাউন্ট" : "Verified Account"
   };
@@ -39,10 +41,11 @@ export default function Profile() {
     { href: "/tasks", icon: CheckSquare, color: "text-orange-600", bg: "bg-orange-100", title: t.tasks, desc: t.tasksSub },
     { href: "/team", icon: Users, color: "text-purple-600", bg: "bg-purple-100", title: t.team, desc: t.teamSub },
     { href: "/settings", icon: Settings, color: "text-gray-600", bg: "bg-gray-100", title: t.settings, desc: t.settingsSub },
+    { href: "/settings?tab=legal", icon: FileText, color: "text-cyan-600", bg: "bg-cyan-100", title: t.tc, desc: t.tcSub },
   ];
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
       <header className="text-center pb-4">
         <div className="relative inline-block mb-4">
           <div className="h-24 w-24 rounded-full bg-primary/10 flex items-center justify-center border-4 border-background shadow-xl">
