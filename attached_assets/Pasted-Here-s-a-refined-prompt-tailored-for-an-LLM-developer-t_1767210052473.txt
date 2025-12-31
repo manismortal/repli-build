@@ -1,0 +1,53 @@
+Here's a refined prompt tailored for an LLM developer to implement the requested features for your mobile application:
+
+---
+
+**Project Update Prompt for LLM Developer**
+
+### Objective
+Revamp the mobile application by transitioning from a 3-dot menu to a bottom navigation system. Introduce an investment and profit system that includes various user packages.
+
+### Features to Implement
+
+1. **Navigation Update**
+   - Change the current 3-dot menu to a bottom navigation bar for improved mobile usability.
+
+2. **Investment Packages**
+   - Implement the following investment packages:
+     - **Normal Packages:** 
+       - Taka 250
+       - Taka 500
+       - Taka 1500
+       - Taka 2000
+     - **Premium Package:**
+       - Taka 5000
+   - Each package should offer a maximum profit of **x12** throughout a **60-day** investment period, including a **15-day maturity period**.
+
+3. **Withdrawal and Bonuses**
+   - Users can withdraw the maximum x12 profit and a welcome bonus of Taka 250 only if they fulfill the following requirements:
+     - Complete daily tasks, which include watching **5 ads each day** for a total of **60 days**.
+     - Refer **12 people across 5 levels**.
+   - For each referral, the bonus will grow:
+     - **50 referrals** will elevate a user to an Area Manager status with a salary of Taka 200,000 per month.
+     - **100 referrals** will elevate a user to a Regional Manager status with a salary of Taka 500,000 per month.
+
+4. **Package Cards**
+   - Design a card for each investment package displaying:
+     - Daily Bonus
+     - Maturity Period 
+     - An active day counter for the running investment package.
+
+5. **Capacity Settings**
+   - Extend the available seats for each regular package to **2000 seats**.
+   - Limit the premium package to **500 seats** only.
+
+### Design Considerations
+- Adopt a mobile-centric user interface for intuitive navigation and engagement.
+- Ensure that all features are optimized for performance and scalability.
+
+**Deliverables**
+- A fully functional mobile app feature set integrated into the existing project with clear documentation for each new functionality.
+
+---
+
+Feel free to modify any part of the prompt to better fit your project's needs or specific terminology.

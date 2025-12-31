@@ -1,6 +1,7 @@
+import { useAuth } from "@/lib/auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, TrendingUp } from "lucide-react";
+import { Users, TrendingUp, Trophy, Award, Landmark } from "lucide-react";
 
 const TEAM_MEMBERS = [
   { id: 1, name: "Fatima Khan", phone: "01712345678", role: "Regular User", joined: "45 days ago", earnings: 2450 },
@@ -10,150 +11,121 @@ const TEAM_MEMBERS = [
   { id: 5, name: "Sophia Rahman", phone: "01923456789", role: "Regular User", joined: "2 days ago", earnings: 100 },
 ];
 
-const AREA_MANAGERS = [
-  { id: 1, name: "Karim Uddin", region: "Dhaka Metropolitan", active: true, commission: "5%" },
-  { id: 2, name: "Salma Begum", region: "Chattogram Division", active: true, commission: "5%" },
-];
-
-const REGIONAL_MANAGERS = [
-  { id: 1, name: "Mohammad Salim", region: "Bangladesh North", active: true, commission: "8%" },
-  { id: 2, name: "Rina Dey", region: "Bangladesh South", active: true, commission: "8%" },
-];
-
 export default function Team() {
+  const referralCount = 12; // Mocking the requirement of 12 people
   const totalTeamEarnings = TEAM_MEMBERS.reduce((sum, m) => sum + m.earnings, 0);
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
       <div>
-        <h1 className="text-4xl font-heading font-bold mb-2">My Team</h1>
-        <p className="text-muted-foreground text-lg">View your network and referral commissions</p>
+        <h1 className="text-4xl font-heading font-bold mb-2">Network</h1>
+        <p className="text-muted-foreground text-lg">Manage your referrals and grow your career</p>
       </div>
 
-      {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="hover-elevate">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Direct Referrals</p>
-                <p className="text-3xl font-bold font-heading">{TEAM_MEMBERS.length}</p>
-              </div>
-              <Users className="h-8 w-8 text-primary" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="hover-elevate">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Total Team Earnings</p>
-                <p className="text-3xl font-bold font-heading">৳{totalTeamEarnings.toLocaleString()}</p>
-              </div>
-              <TrendingUp className="h-8 w-8 text-accent" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="hover-elevate">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Your Commission</p>
-                <p className="text-3xl font-bold font-heading">৳{(totalTeamEarnings * 0.1).toFixed(0)}</p>
-              </div>
-              <Badge className="bg-green-600">10% Rate</Badge>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Direct Referrals */}
-      <Card className="hover-elevate">
-        <CardHeader>
-          <CardTitle className="font-heading text-2xl">Your Direct Referrals</CardTitle>
-          <CardDescription>5 active members in your network</CardDescription>
+      {/* Referral Requirements */}
+      <Card className="border-primary bg-primary/5">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg font-heading flex items-center gap-2">
+            <Award className="h-5 w-5 text-primary" />
+            Withdrawal Eligibility
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {TEAM_MEMBERS.map((member) => (
-              <div key={member.id} className="flex items-center justify-between p-4 bg-secondary/50 rounded-lg border">
+          <div className="flex items-center justify-between p-3 bg-card rounded-lg border mb-4">
+            <span className="text-sm font-medium">Referrals Required (5 Levels)</span>
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-bold">{referralCount}/12</span>
+              {referralCount >= 12 ? <Badge className="bg-green-600">QUALIFIED</Badge> : <Badge variant="outline">PENDING</Badge>}
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground text-center">
+            * Refer 12 people across 5 levels to unlock x12 Profit and ৳250 Welcome Bonus.
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Career Milestones */}
+      <div className="grid grid-cols-1 gap-4">
+        <Card className="hover-elevate border-l-4 border-l-blue-600">
+          <CardHeader className="pb-3">
+            <div className="flex justify-between items-start">
+              <div>
+                <CardTitle className="text-xl font-heading text-blue-600">Area Manager</CardTitle>
+                <CardDescription>Target: 50 Referrals</CardDescription>
+              </div>
+              <Landmark className="h-8 w-8 text-blue-600 opacity-20" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-semibold">Monthly Salary</span>
+                <span className="text-2xl font-bold font-heading text-blue-600">৳200,000</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="hover-elevate border-l-4 border-l-purple-600">
+          <CardHeader className="pb-3">
+            <div className="flex justify-between items-start">
+              <div>
+                <CardTitle className="text-xl font-heading text-purple-600">Regional Manager</CardTitle>
+                <CardDescription>Target: 100 Referrals</CardDescription>
+              </div>
+              <Trophy className="h-8 w-8 text-purple-600 opacity-20" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-xl">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-semibold">Monthly Salary</span>
+                <span className="text-2xl font-bold font-heading text-purple-600">৳500,000</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 gap-4">
+        <Card className="hover-elevate">
+          <CardContent className="pt-6">
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1">Direct Team</p>
+            <p className="text-3xl font-bold font-heading">{TEAM_MEMBERS.length}</p>
+          </CardContent>
+        </Card>
+        <Card className="hover-elevate">
+          <CardContent className="pt-6">
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1">Total Comms</p>
+            <p className="text-3xl font-bold font-heading">৳{totalTeamEarnings.toLocaleString()}</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Team List */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-heading">Direct Team Members</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {TEAM_MEMBERS.map((member) => (
+            <div key={member.id} className="flex items-center justify-between p-4 bg-secondary/30 rounded-xl border border-border/50">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                  {member.name.charAt(0)}
+                </div>
                 <div>
-                  <p className="font-semibold text-sm">{member.name}</p>
-                  <p className="text-xs text-muted-foreground">{member.phone}</p>
-                </div>
-                <div className="text-right">
-                  <Badge variant="outline" className="mb-1 block">{member.role}</Badge>
-                  <p className="text-xs text-muted-foreground">Joined {member.joined}</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-bold text-sm">৳{member.earnings}</p>
-                  <p className="text-xs text-muted-foreground">Earnings</p>
+                  <p className="font-bold text-sm">{member.name}</p>
+                  <p className="text-[10px] text-muted-foreground font-mono">{member.phone}</p>
                 </div>
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Area Managers */}
-      <Card className="hover-elevate">
-        <CardHeader>
-          <CardTitle className="font-heading text-2xl">Area Manager Status</CardTitle>
-          <CardDescription>Promoted to manage regional teams</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {AREA_MANAGERS.map((manager) => (
-              <div key={manager.id} className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="font-semibold">{manager.name}</p>
-                  <Badge className="bg-blue-600">AREA MANAGER</Badge>
-                </div>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-muted-foreground text-xs">Region</p>
-                    <p className="font-semibold">{manager.region}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground text-xs">Commission Rate</p>
-                    <p className="font-semibold">{manager.commission}</p>
-                  </div>
-                </div>
+              <div className="text-right">
+                <p className="font-bold text-xs text-primary">+৳{member.earnings}</p>
+                <p className="text-[10px] text-muted-foreground">{member.joined}</p>
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Regional Managers */}
-      <Card className="hover-elevate">
-        <CardHeader>
-          <CardTitle className="font-heading text-2xl">Regional Manager Status</CardTitle>
-          <CardDescription>Top-level regional leadership</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {REGIONAL_MANAGERS.map((manager) => (
-              <div key={manager.id} className="p-4 bg-purple-50 dark:bg-purple-950/20 rounded-lg border border-purple-200 dark:border-purple-800">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="font-semibold">{manager.name}</p>
-                  <Badge className="bg-purple-600">REGIONAL MANAGER</Badge>
-                </div>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-muted-foreground text-xs">Region</p>
-                    <p className="font-semibold">{manager.region}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground text-xs">Commission Rate</p>
-                    <p className="font-semibold">{manager.commission}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </CardContent>
       </Card>
     </div>

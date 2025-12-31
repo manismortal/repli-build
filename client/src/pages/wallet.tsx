@@ -1,125 +1,85 @@
 import { useAuth } from "@/lib/auth";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowUpRight, ArrowDownLeft, Plus, Minus } from "lucide-react";
+import { Wallet, ArrowDownLeft, ArrowUpRight, History, CreditCard, Banknote } from "lucide-react";
 
-const TRANSACTIONS = [
-  { id: 1, type: "credit", amount: 5000, description: "Investment Return", date: "2025-01-28", status: "completed" },
-  { id: 2, type: "debit", amount: 2000, description: "Investment Purchase", date: "2025-01-27", status: "completed" },
-  { id: 3, type: "credit", amount: 100, description: "Daily Task Bonus", date: "2025-01-27", status: "completed" },
-  { id: 4, type: "credit", amount: 450, description: "Referral Commission", date: "2025-01-26", status: "completed" },
-  { id: 5, type: "debit", amount: 1500, description: "Withdrawal Request", date: "2025-01-25", status: "pending" },
-  { id: 6, type: "credit", amount: 300, description: "Lottery Prize", date: "2025-01-24", status: "completed" },
-];
-
-export default function Wallet() {
+export default function WalletPage() {
   const { user } = useAuth();
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
       <div>
-        <h1 className="text-4xl font-heading font-bold mb-2">Wallet</h1>
-        <p className="text-muted-foreground text-lg">Manage your funds and view transaction history</p>
+        <h1 className="text-4xl font-heading font-bold mb-2">Finance</h1>
+        <p className="text-muted-foreground text-lg">Manage your assets and withdrawals</p>
       </div>
 
-      {/* Balance Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="hover-elevate bg-gradient-to-br from-primary/5 to-transparent border-primary/20">
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground mb-2">Available Balance</p>
-            <p className="text-4xl font-bold font-heading text-primary mb-4">৳{user?.balance.toFixed(2)}</p>
-            <Button className="w-full font-heading">
-              <Plus className="h-4 w-4 mr-2" />
-              Deposit
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="hover-elevate bg-gradient-to-br from-accent/5 to-transparent border-accent/20">
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground mb-2">Locked in Investments</p>
-            <p className="text-4xl font-bold font-heading text-accent mb-4">৳{user?.lockedBalance.toFixed(2)}</p>
-            <Button variant="outline" className="w-full font-heading" disabled>
-              <Minus className="h-4 w-4 mr-2" />
-              Locked
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="hover-elevate">
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground mb-2">Total Worth</p>
-            <p className="text-4xl font-bold font-heading mb-4">৳{(user?.balance! + user?.lockedBalance!).toFixed(2)}</p>
-            <Button variant="secondary" className="w-full font-heading">
+      <Card className="bg-sidebar text-sidebar-foreground border-none overflow-hidden relative shadow-2xl">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full -mr-16 -mt-16 blur-3xl" />
+        <CardContent className="pt-8 pb-8 relative z-10">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary mb-2">Available Balance</p>
+          <div className="flex items-baseline gap-2">
+            <span className="text-5xl font-bold font-heading">৳{user?.balance.toLocaleString()}</span>
+            <span className="text-xs font-semibold text-sidebar-foreground/50">BDT</span>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4 mt-8">
+            <Button className="w-full h-12 rounded-xl font-heading shadow-lg shadow-primary/20">
               <ArrowDownLeft className="h-4 w-4 mr-2" />
-              Withdraw
+              DEPOSIT
             </Button>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Quick Actions */}
-      <Card className="hover-elevate">
-        <CardHeader>
-          <CardTitle className="font-heading">Quick Actions</CardTitle>
-        </CardHeader>
-        <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Button variant="outline" className="h-12 flex flex-col items-center gap-1">
-            <Plus className="h-5 w-5" />
-            <span className="text-xs">Deposit</span>
-          </Button>
-          <Button variant="outline" className="h-12 flex flex-col items-center gap-1">
-            <Minus className="h-5 w-5" />
-            <span className="text-xs">Withdraw</span>
-          </Button>
-          <Button variant="outline" className="h-12 flex flex-col items-center gap-1">
-            <ArrowUpRight className="h-5 w-5" />
-            <span className="text-xs">Transfer</span>
-          </Button>
-          <Button variant="outline" className="h-12 flex flex-col items-center gap-1">
-            <ArrowDownLeft className="h-5 w-5" />
-            <span className="text-xs">Request</span>
-          </Button>
+            <Button variant="secondary" className="w-full h-12 rounded-xl font-heading bg-sidebar-accent/50 hover:bg-sidebar-accent border border-white/10">
+              <ArrowUpRight className="h-4 w-4 mr-2" />
+              WITHDRAW
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
-      {/* Transaction History */}
-      <Card className="hover-elevate">
-        <CardHeader>
-          <CardTitle className="font-heading text-2xl">Transaction History</CardTitle>
-          <CardDescription>Your recent wallet transactions</CardDescription>
+      <div className="grid grid-cols-2 gap-4">
+        <Card className="hover-elevate">
+          <CardContent className="pt-6">
+            <div className="h-8 w-8 rounded-lg bg-accent/10 text-accent flex items-center justify-center mb-3">
+              <Banknote className="h-4 w-4" />
+            </div>
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Welcome Bonus</p>
+            <p className="text-2xl font-bold font-heading">৳250</p>
+            <p className="text-[10px] text-accent font-medium mt-1">LOCKED</p>
+          </CardContent>
+        </Card>
+        <Card className="hover-elevate">
+          <CardContent className="pt-6">
+            <div className="h-8 w-8 rounded-lg bg-green-600/10 text-green-600 flex items-center justify-center mb-3">
+              <History className="h-4 w-4" />
+            </div>
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Locked Funds</p>
+            <p className="text-2xl font-bold font-heading">৳{user?.lockedBalance.toLocaleString()}</p>
+            <p className="text-[10px] text-green-600 font-medium mt-1">IN CYCLE</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="border-none shadow-none bg-transparent">
+        <CardHeader className="px-0">
+          <CardTitle className="font-heading text-xl flex items-center gap-2">
+            <CreditCard className="h-5 w-5 text-primary" />
+            Recent Transactions
+          </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {TRANSACTIONS.map((tx) => (
-              <div key={tx.id} className="flex items-center justify-between p-4 bg-secondary/50 rounded-lg border hover:bg-secondary/70 transition-colors">
-                <div className="flex items-center gap-4">
-                  <div className={`h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                    tx.type === "credit" ? "bg-green-600/10 text-green-600" : "bg-red-600/10 text-red-600"
-                  }`}>
-                    {tx.type === "credit" ? (
-                      <ArrowDownLeft className="h-5 w-5" />
-                    ) : (
-                      <ArrowUpRight className="h-5 w-5" />
-                    )}
-                  </div>
-                  <div>
-                    <p className="font-semibold text-sm">{tx.description}</p>
-                    <p className="text-xs text-muted-foreground">{tx.date}</p>
-                  </div>
+        <CardContent className="px-0 space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="flex items-center justify-between p-4 bg-card rounded-2xl border border-border/50">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-secondary flex items-center justify-center">
+                  <ArrowDownLeft className="h-5 w-5 text-green-600" />
                 </div>
-                <div className="text-right">
-                  <p className={`font-bold text-sm ${tx.type === "credit" ? "text-green-600" : "text-red-600"}`}>
-                    {tx.type === "credit" ? "+" : "-"}৳{tx.amount.toLocaleString()}
-                  </p>
-                  <Badge variant={tx.status === "completed" ? "default" : "secondary"} className="text-xs">
-                    {tx.status}
-                  </Badge>
+                <div>
+                  <p className="text-sm font-bold">Daily Task Reward</p>
+                  <p className="text-[10px] text-muted-foreground">Today, 2:45 PM</p>
                 </div>
               </div>
-            ))}
-          </div>
+              <p className="font-bold text-green-600">+৳50</p>
+            </div>
+          ))}
         </CardContent>
       </Card>
     </div>

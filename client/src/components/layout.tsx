@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
 import { 
@@ -10,18 +10,13 @@ import {
   Ticket, 
   Shield, 
   LogOut, 
-  Menu,
-  Ship,
-  X
+  Ship
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
   const [location] = useLocation();
-  const [open, setOpen] = useState(false);
 
   if (!user) return <div className="min-h-screen bg-secondary/30">{children}</div>;
 
@@ -29,114 +24,59 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     const isActive = location === href;
     return (
       <Link href={href}>
-        <Button
-          variant={isActive ? "default" : "ghost"}
-          className={`w-full justify-start gap-3 ${isActive ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-primary'}`}
-          onClick={() => setOpen(false)}
-        >
-          <Icon className="h-5 w-5" />
-          <span className="font-medium">{label}</span>
-        </Button>
+        <div className="flex flex-col items-center justify-center flex-1 cursor-pointer">
+          <div className={`p-1 rounded-lg transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground'}`}>
+            <Icon className={`h-6 w-6 ${isActive ? 'fill-primary/20' : ''}`} />
+          </div>
+          <span className={`text-[10px] font-medium mt-1 ${isActive ? 'text-primary' : 'text-muted-foreground'}`}>
+            {label}
+          </span>
+          {isActive && <div className="absolute bottom-0 h-1 w-8 bg-primary rounded-t-full" />}
+        </div>
       </Link>
     );
   };
 
   const navigation = [
-    { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-    { href: "/products", icon: Package, label: "Investments" },
-    { href: "/tasks", icon: CheckSquare, label: "Daily Tasks" },
+    { href: "/dashboard", icon: LayoutDashboard, label: "Home" },
+    { href: "/products", icon: Package, label: "Invest" },
+    { href: "/tasks", icon: CheckSquare, label: "Tasks" },
     { href: "/wallet", icon: Wallet, label: "Wallet" },
-    { href: "/team", icon: Users, label: "My Team" },
-    { href: "/lottery", icon: Ticket, label: "Lottery" },
+    { href: "/team", icon: Users, label: "Team" },
   ];
 
-  if (user.role === "admin") {
-    navigation.push({ href: "/admin", icon: Shield, label: "Admin Panel" });
-  }
-
   return (
-    <div className="min-h-screen bg-secondary/30 flex">
-      {/* Desktop Sidebar */}
-      <aside className="hidden md:flex w-64 flex-col bg-card border-r fixed h-full z-10">
-        <div className="p-6 border-b flex items-center gap-3">
-          <div className="h-10 w-10 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
-            <Ship className="h-6 w-6" />
-          </div>
-          <div>
-            <h1 className="font-heading font-bold text-xl tracking-tight">MAERSK.Line</h1>
-            <p className="text-xs text-muted-foreground tracking-wider">BANGLADESH</p>
-          </div>
+    <div className="min-h-screen bg-secondary/20 flex flex-col">
+      {/* Top Header - Global */}
+      <header className="h-16 border-b bg-card flex items-center justify-between px-6 sticky top-0 z-50">
+        <div className="flex items-center gap-2">
+          <Ship className="h-6 w-6 text-primary" />
+          <span className="font-heading font-bold text-lg tracking-tight">MAERSK.LINE</span>
         </div>
-        
-        <div className="flex-1 py-6 px-4 space-y-1">
-          {navigation.map((item) => (
-            <NavItem key={item.href} {...item} />
-          ))}
-        </div>
-
-        <div className="p-4 border-t bg-secondary/10">
-          <div className="flex items-center gap-3 mb-4">
-            <Avatar className="h-9 w-9 border-2 border-primary/20">
-              <AvatarFallback className="bg-primary/10 text-primary font-bold">
-                {user.name.charAt(0)}
-              </AvatarFallback>
-            </Avatar>
-            <div className="overflow-hidden">
-              <p className="text-sm font-semibold truncate">{user.name}</p>
-              <p className="text-xs text-muted-foreground truncate">{user.mobile}</p>
-            </div>
+        <div className="flex items-center gap-4">
+          <div className="flex flex-col items-end">
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Balance</span>
+            <span className="text-sm font-bold text-primary">৳{user.balance.toLocaleString()}</span>
           </div>
-          <Button variant="outline" className="w-full text-destructive hover:text-destructive hover:bg-destructive/10" onClick={logout}>
-            <LogOut className="h-4 w-4 mr-2" />
-            Logout
+          <Button variant="ghost" size="icon" onClick={logout} className="text-muted-foreground hover:text-destructive">
+            <LogOut className="h-5 w-5" />
           </Button>
         </div>
-      </aside>
+      </header>
 
-      {/* Mobile Nav & Main Content */}
-      <main className="flex-1 md:ml-64 flex flex-col min-h-screen">
-        <header className="md:hidden h-16 border-b bg-card flex items-center justify-between px-4 sticky top-0 z-20">
-          <div className="flex items-center gap-2">
-            <Ship className="h-6 w-6 text-primary" />
-            <span className="font-heading font-bold text-lg">MAERSK.Line</span>
-          </div>
-          <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Menu className="h-6 w-6" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="p-0 w-72">
-              <div className="p-6 border-b flex items-center gap-3 bg-secondary/30">
-                <div className="h-10 w-10 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
-                  <Ship className="h-6 w-6" />
-                </div>
-                <div>
-                  <h1 className="font-heading font-bold text-xl tracking-tight">MAERSK.Line</h1>
-                  <p className="text-xs text-muted-foreground tracking-wider">BANGLADESH</p>
-                </div>
-              </div>
-              <div className="py-6 px-4 space-y-1">
-                {navigation.map((item) => (
-                  <NavItem key={item.href} {...item} />
-                ))}
-              </div>
-              <div className="absolute bottom-0 w-full p-4 border-t bg-secondary/10">
-                <Button variant="destructive" className="w-full" onClick={logout}>
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Logout
-                </Button>
-              </div>
-            </SheetContent>
-          </Sheet>
-        </header>
-
-        <div className="flex-1 p-4 md:p-8 overflow-y-auto">
-          <div className="max-w-6xl mx-auto animate-in fade-in duration-500">
-            {children}
-          </div>
+      {/* Main Content Area */}
+      <main className="flex-1 pb-24 overflow-y-auto">
+        <div className="p-4 md:p-8 max-w-lg mx-auto md:max-w-4xl animate-in fade-in duration-500">
+          {children}
         </div>
       </main>
+
+      {/* Bottom Navigation - Mobile First */}
+      <nav className="fixed bottom-0 left-0 right-0 h-20 bg-card border-t flex items-center justify-around px-2 pb-safe z-50 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+        {navigation.map((item) => (
+          <NavItem key={item.href} {...item} />
+        ))}
+      </nav>
     </div>
   );
 }
