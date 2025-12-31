@@ -15,6 +15,8 @@ import Team from "@/pages/team";
 import Lottery from "@/pages/lottery";
 import BkashPayment from "@/pages/bkash-payment";
 import Settings from "@/pages/settings";
+import Profile from "@/pages/profile";
+import Notifications from "@/pages/notifications";
 
 function Router() {
   const { user } = useAuth();
@@ -44,6 +46,8 @@ function Router() {
             <Route path="/team" component={Team} />
             <Route path="/lottery" component={Lottery} />
             <Route path="/settings" component={Settings} />
+            <Route path="/profile" component={Profile} />
+            <Route path="/notifications" component={Notifications} />
             <Route component={NotFound} />
           </Switch>
         </Layout>
