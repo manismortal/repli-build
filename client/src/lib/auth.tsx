@@ -13,8 +13,12 @@ export type User = {
   isFrozen: boolean;
 };
 
+type Language = "bn" | "en";
+
 type AuthContextType = {
   user: User | null;
+  language: Language;
+  setLanguage: (lang: Language) => void;
   login: (mobile: string, pass: string) => void;
   register: (name: string, mobile: string, pass: string, refCode?: string) => void;
   logout: () => void;
@@ -26,7 +30,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // Mock Data
 const MOCK_USER: User = {
   id: "u1",
-  name: "Rahim Ahmed",
+  name: "রহিম আহমেদ",
   mobile: "01712345678",
   role: "user",
   balance: 1500.00,
@@ -37,7 +41,7 @@ const MOCK_USER: User = {
 
 const MOCK_ADMIN: User = {
   id: "a1",
-  name: "Admin User",
+  name: "অ্যাডমিন ইউজার",
   mobile: "admin",
   role: "admin",
   balance: 999999,
@@ -48,32 +52,46 @@ const MOCK_ADMIN: User = {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [language, setLanguageState] = useState<Language>("bn");
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check local storage for session
     const stored = localStorage.getItem("maersk_session");
     if (stored) {
       setUser(JSON.parse(stored));
     }
+    const storedLang = localStorage.getItem("maersk_lang") as Language;
+    if (storedLang) {
+      setLanguageState(storedLang);
+    }
   }, []);
+
+  const setLanguage = (lang: Language) => {
+    setLanguageState(lang);
+    localStorage.setItem("maersk_lang", lang);
+  };
 
   const login = (mobile: string, pass: string) => {
     if (mobile === "admin" && pass === "admin") {
       setUser(MOCK_ADMIN);
       localStorage.setItem("maersk_session", JSON.stringify(MOCK_ADMIN));
-      toast({ title: "Welcome back, Admin" });
+      toast({ title: language === "bn" ? "আবার স্বাগতম, অ্যাডমিন" : "Welcome back, Admin" });
       return;
     }
     
-    // Simulating login for demo
     if (mobile && pass) {
-      const newUser = { ...MOCK_USER, mobile, name: "Demo User" };
+      const newUser = { ...MOCK_USER, mobile, name: language === "bn" ? "ডেমো ইউজার" : "Demo User" };
       setUser(newUser);
       localStorage.setItem("maersk_session", JSON.stringify(newUser));
-      toast({ title: "Login Successful", description: "Welcome to MAERSK.Line BD" });
+      toast({ 
+        title: language === "bn" ? "লগইন সফল হয়েছে" : "Login Successful", 
+        description: language === "bn" ? "MAERSK.Line BD-তে আপনাকে স্বাগতম" : "Welcome to MAERSK.Line BD" 
+      });
     } else {
-      toast({ title: "Login Failed", variant: "destructive" });
+      toast({ 
+        title: language === "bn" ? "লগইন ব্যর্থ হয়েছে" : "Login Failed", 
+        variant: "destructive" 
+      });
     }
   };
 
@@ -90,13 +108,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     setUser(newUser);
     localStorage.setItem("maersk_session", JSON.stringify(newUser));
-    toast({ title: "Registration Successful", description: "Your account has been created." });
+    toast({ 
+      title: language === "bn" ? "নিবন্ধন সফল হয়েছে" : "Registration Successful", 
+      description: language === "bn" ? "আপনার অ্যাকাউন্ট তৈরি করা হয়েছে।" : "Your account has been created." 
+    });
   };
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem("maersk_session");
-    toast({ title: "Logged out" });
+    toast({ title: language === "bn" ? "লগ আউট হয়েছে" : "Logged out" });
   };
 
   const updateBalance = (amount: number) => {
@@ -108,7 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, updateBalance }}>
+    <AuthContext.Provider value={{ user, language, setLanguage, login, register, logout, updateBalance }}>
       {children}
     </AuthContext.Provider>
   );

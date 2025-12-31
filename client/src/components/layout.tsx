@@ -9,18 +9,26 @@ import {
   Users, 
   Settings,
   LogOut, 
-  Ship
+  Ship,
+  Languages
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  const { user, logout } = useAuth();
+  const { user, logout, language, setLanguage } = useAuth();
   const [location] = useLocation();
 
   if (!user) return <div className="min-h-screen bg-secondary/30">{children}</div>;
 
-  const NavItem = ({ href, icon: Icon, label }: { href: string; icon: any; label: string }) => {
+  const NavItem = ({ href, icon: Icon, label, labelBn }: { href: string; icon: any; label: string; labelBn: string }) => {
     const isActive = location === href;
+    const displayLabel = language === "bn" ? labelBn : label;
     return (
       <Link href={href}>
         <div className="flex flex-col items-center justify-center flex-1 cursor-pointer min-w-[50px]">
@@ -28,7 +36,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <Icon className={`h-6 w-6 ${isActive ? 'fill-primary/20' : ''}`} />
           </div>
           <span className={`text-[9px] font-medium mt-1 ${isActive ? 'text-primary' : 'text-muted-foreground'}`}>
-            {label}
+            {displayLabel}
           </span>
           {isActive && <div className="absolute bottom-0 h-1 w-8 bg-primary rounded-t-full" />}
         </div>
@@ -37,12 +45,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   };
 
   const navigation = [
-    { href: "/dashboard", icon: LayoutDashboard, label: "Home" },
-    { href: "/products", icon: Package, label: "Invest" },
-    { href: "/tasks", icon: CheckSquare, label: "Tasks" },
-    { href: "/wallet", icon: Wallet, label: "Wallet" },
-    { href: "/team", icon: Users, label: "Team" },
-    { href: "/settings", icon: Settings, label: "Settings" },
+    { href: "/dashboard", icon: LayoutDashboard, label: "Home", labelBn: "মূলপাতা" },
+    { href: "/products", icon: Package, label: "Invest", labelBn: "বিনিয়োগ" },
+    { href: "/tasks", icon: CheckSquare, label: "Tasks", labelBn: "কাজ" },
+    { href: "/wallet", icon: Wallet, label: "Wallet", labelBn: "ওয়ালেট" },
+    { href: "/team", icon: Users, label: "Team", labelBn: "টিম" },
+    { href: "/settings", icon: Settings, label: "Settings", labelBn: "সেটিংস" },
   ];
 
   return (
@@ -54,8 +62,22 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <span className="font-heading font-bold text-lg tracking-tight">MAERSK.LINE</span>
         </div>
         <div className="flex items-center gap-4">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="text-muted-foreground">
+                <Languages className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setLanguage("bn")}>বাংলা</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setLanguage("en")}>English</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <div className="flex flex-col items-end">
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Balance</span>
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+              {language === "bn" ? "ব্যালেন্স" : "Balance"}
+            </span>
             <span className="text-sm font-bold text-primary">৳{user.balance.toLocaleString()}</span>
           </div>
           <Button variant="ghost" size="icon" onClick={logout} className="text-muted-foreground hover:text-destructive">
