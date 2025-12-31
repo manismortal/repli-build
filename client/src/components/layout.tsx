@@ -62,6 +62,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   const navigation = [
     { href: "/dashboard", icon: LayoutDashboard, label: "Home", labelBn: "মূলপাতা" },
+    { href: "/products", icon: Package, label: "Packages", labelBn: "প্যাকেজ" },
     { href: "/notifications", icon: Bell, label: "Notifications", labelBn: "বিজ্ঞপ্তি" },
     { href: "/profile", icon: User, label: "Profile", labelBn: "প্রোফাইল" },
   ];

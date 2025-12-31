@@ -75,7 +75,7 @@ const PACKAGES = [
   },
 ];
 
-export default function Products() {
+export default function Products({ hideHeader = false }: { hideHeader?: boolean }) {
   const { user, updateBalance, language } = useAuth();
   const { toast } = useToast();
   const availableSeats = (pkg: any) => pkg.seatsTotal - pkg.seatsFilled;
@@ -113,11 +113,13 @@ export default function Products() {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
-      <header>
-        <h1 className="text-4xl font-heading font-bold mb-2">{t.title}</h1>
-        <p className="text-muted-foreground text-lg">{t.sub}</p>
-      </header>
+    <div className={`space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 ${!hideHeader ? 'pb-20' : ''}`}>
+      {!hideHeader && (
+        <header>
+          <h1 className="text-4xl font-heading font-bold mb-2">{t.title}</h1>
+          <p className="text-muted-foreground text-lg">{t.sub}</p>
+        </header>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {PACKAGES.map((pkg) => (
