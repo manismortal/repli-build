@@ -41,7 +41,7 @@ export default function Profile() {
     { href: "/tasks", icon: CheckSquare, color: "text-orange-600", bg: "bg-orange-100", title: t.tasks, desc: t.tasksSub },
     { href: "/team", icon: Users, color: "text-purple-600", bg: "bg-purple-100", title: t.team, desc: t.teamSub },
     { href: "/settings", icon: Settings, color: "text-gray-600", bg: "bg-gray-100", title: t.settings, desc: t.settingsSub },
-    { href: "/settings?tab=legal", icon: FileText, color: "text-cyan-600", bg: "bg-cyan-100", title: t.tc, desc: t.tcSub },
+    { href: "/terms", icon: FileText, color: "text-cyan-600", bg: "bg-cyan-100", title: t.tc, desc: t.tcSub },
   ];
 
   return (

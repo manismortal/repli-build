@@ -1,7 +1,8 @@
 import { useAuth } from "@/lib/auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, Lock, Wallet, Users } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { TrendingUp, Lock, Wallet, Users, ArrowUpRight } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 const chartData = [
@@ -15,10 +16,14 @@ const chartData = [
 
 export default function Dashboard() {
   const { user, language } = useAuth();
+  
+  // Random avatar generator based on user ID or name
+  const avatarId = user?.id || user?.name?.length || 1;
+  const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${avatarId}`;
 
   const t = {
-    welcome: language === "bn" ? `আবার স্বাগতম, ${user?.name}` : `Welcome back, ${user?.name}`,
-    sub: language === "bn" ? "আপনার বিনিয়োগ ড্যাশবোর্ড" : "Your investment dashboard",
+    welcome: language === "bn" ? `আবার স্বাগতম,` : `Welcome back,`,
+    sub: language === "bn" ? "আপনার অ্যাকাউন্ট এক নজরে" : "Your account at a glance",
     balance: language === "bn" ? "ব্যালেন্স" : "Balance",
     available: language === "bn" ? "বিনিয়োগের জন্য উপলব্ধ" : "Available to invest",
     locked: language === "bn" ? "লক করা ব্যালেন্স" : "Locked Balance",
@@ -39,11 +44,33 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-20">
-      {/* Welcome Section */}
-      <div>
-        <h1 className="text-4xl font-heading font-bold mb-2">{t.welcome}</h1>
-        <p className="text-muted-foreground text-lg">{t.sub}</p>
+    <div className="space-y-6 animate-in fade-in duration-500 pb-20">
+      {/* Premium Welcome Section */}
+      <div className="relative overflow-hidden bg-slate-900 rounded-[2.5rem] p-6 text-white shadow-2xl">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl -mr-16 -mt-16" />
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl -ml-12 -mb-12" />
+        
+        <div className="relative flex items-center gap-4">
+          <div className="relative">
+            <Avatar className="h-16 w-16 border-2 border-primary/50 p-0.5">
+              <AvatarImage src={avatarUrl} alt={user?.name} />
+              <AvatarFallback className="bg-primary/20 text-primary font-bold">
+                {user?.name?.substring(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="absolute -bottom-1 -right-1 bg-green-500 h-4 w-4 rounded-full border-2 border-slate-900 shadow-lg" />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <span className="text-slate-400 text-sm font-medium">{t.welcome}</span>
+              <Badge variant="outline" className="border-primary/30 text-primary text-[10px] h-5 bg-primary/5">PRO</Badge>
+            </div>
+            <h1 className="text-2xl font-bold font-heading tracking-tight">{user?.name}</h1>
+          </div>
+          <div className="h-10 w-10 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-sm border border-white/10">
+            <ArrowUpRight className="h-5 w-5 text-primary" />
+          </div>
+        </div>
       </div>
 
       {/* Quick Stats */}

@@ -17,6 +17,7 @@ import BkashPayment from "@/pages/bkash-payment";
 import Settings from "@/pages/settings";
 import Profile from "@/pages/profile";
 import Notifications from "@/pages/notifications";
+import Terms from "@/pages/terms";
 
 function Router() {
   const { user } = useAuth();
@@ -50,6 +51,7 @@ function Router() {
             <Route path="/settings" component={Settings} />
             <Route path="/profile" component={Profile} />
             <Route path="/notifications" component={Notifications} />
+            <Route path="/terms" component={Terms} />
             <Route component={NotFound} />
           </Switch>
         </Layout>
