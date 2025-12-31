@@ -40,7 +40,9 @@ function Router() {
           <Switch>
             <Route path="/" component={Dashboard} />
             <Route path="/dashboard" component={Dashboard} />
-            <Route path="/products" component={Products} />
+            <Route path="/products">
+              {(params) => <Products />}
+            </Route>
             <Route path="/tasks" component={Tasks} />
             <Route path="/wallet" component={Wallet} />
             <Route path="/team" component={Team} />

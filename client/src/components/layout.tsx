@@ -7,7 +7,8 @@ import {
   Bell,
   Ship,
   Languages,
-  LogOut
+  LogOut,
+  Package
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
