@@ -14,6 +14,7 @@ import Wallet from "@/pages/wallet";
 import Team from "@/pages/team";
 import Lottery from "@/pages/lottery";
 import BkashPayment from "@/pages/bkash-payment";
+import Settings from "@/pages/settings";
 
 function Router() {
   const { user } = useAuth();
@@ -42,6 +43,7 @@ function Router() {
             <Route path="/wallet" component={Wallet} />
             <Route path="/team" component={Team} />
             <Route path="/lottery" component={Lottery} />
+            <Route path="/settings" component={Settings} />
             <Route component={NotFound} />
           </Switch>
         </Layout>

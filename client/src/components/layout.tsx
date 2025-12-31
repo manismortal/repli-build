@@ -7,8 +7,7 @@ import {
   CheckSquare, 
   Wallet, 
   Users, 
-  Ticket, 
-  Shield, 
+  Settings,
   LogOut, 
   Ship
 } from "lucide-react";
@@ -24,11 +23,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     const isActive = location === href;
     return (
       <Link href={href}>
-        <div className="flex flex-col items-center justify-center flex-1 cursor-pointer">
+        <div className="flex flex-col items-center justify-center flex-1 cursor-pointer min-w-[50px]">
           <div className={`p-1 rounded-lg transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground'}`}>
             <Icon className={`h-6 w-6 ${isActive ? 'fill-primary/20' : ''}`} />
           </div>
-          <span className={`text-[10px] font-medium mt-1 ${isActive ? 'text-primary' : 'text-muted-foreground'}`}>
+          <span className={`text-[9px] font-medium mt-1 ${isActive ? 'text-primary' : 'text-muted-foreground'}`}>
             {label}
           </span>
           {isActive && <div className="absolute bottom-0 h-1 w-8 bg-primary rounded-t-full" />}
@@ -43,6 +42,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { href: "/tasks", icon: CheckSquare, label: "Tasks" },
     { href: "/wallet", icon: Wallet, label: "Wallet" },
     { href: "/team", icon: Users, label: "Team" },
+    { href: "/settings", icon: Settings, label: "Settings" },
   ];
 
   return (
