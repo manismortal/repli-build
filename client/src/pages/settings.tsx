@@ -31,7 +31,7 @@ export default function Settings() {
   const { user, logout } = useAuth();
   const { toast } = useToast();
   const [username, setUsername] = useState(user?.name || "");
-  const [mobile, setMobile] = useState(user?.mobile || "");
+  const [mobile, setMobile] = useState(user?.username || "");
   const [walletNum, setWalletNum] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -228,7 +228,7 @@ export default function Settings() {
                     <div className="flex gap-3 text-destructive">
                       <Info className="h-5 w-5 shrink-0" />
                       <p className="text-xs font-bold leading-relaxed">
-                        MAERSK.Line BD will not be able to recover any funds (৳{user?.balance}) once this process is complete.
+                        MAERSK.Line BD will not be able to recover any funds (৳{Number(user?.balance || 0).toLocaleString()}) once this process is complete.
                       </p>
                     </div>
                   </div>

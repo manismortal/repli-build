@@ -3,7 +3,7 @@ import { useAuth } from "@/lib/auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Package, DollarSign, Clock, Users, Zap, Calendar } from "lucide-react";
+import { Package, DollarSign, Clock, Users, Zap, Calendar, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 
@@ -113,7 +113,7 @@ export default function Products({ hideHeader = false }: { hideHeader?: boolean 
   };
 
   return (
-    <div className={`space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 ${!hideHeader ? 'pb-20' : ''}`}>
+    <div className={`space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 ${!hideHeader ? 'pb-32' : ''}`}>
       {!hideHeader && (
         <header>
           <h1 className="text-4xl font-heading font-bold mb-2">{t.title}</h1>
@@ -164,7 +164,7 @@ export default function Products({ hideHeader = false }: { hideHeader?: boolean 
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground font-medium flex items-center gap-2">
-                    <TrendingUpIcon className="h-4 w-4 text-green-600 opacity-70" />
+                    <TrendingUp className="h-4 w-4 text-green-600 opacity-70" />
                     {t.maxProfit}
                   </span>
                   <span className="font-bold text-green-600">x{pkg.maxProfitX} (৳{pkg.price * pkg.maxProfitX})</span>
@@ -212,25 +212,5 @@ export default function Products({ hideHeader = false }: { hideHeader?: boolean 
         ))}
       </div>
     </div>
-  );
-}
-
-function TrendingUpIcon(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
-      <polyline points="16 7 22 7 22 13" />
-    </svg>
   );
 }

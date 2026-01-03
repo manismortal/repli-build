@@ -76,7 +76,10 @@ export default function TermsAndConditions() {
         items: [
           "Minimum withdrawal amount is 500 BDT.",
           "A service charge of 5% to 10% may apply to withdrawals.",
-          "Withdrawal requests will be processed within 24 to 72 hours."
+          "Withdrawal requests will be processed within 24 to 72 hours.",
+          "Users receive a 250 BDT Welcome Bonus. This bonus is locked for 60 days.",
+          "IMPORTANT: If any withdrawal is made before 60 days, the Welcome Bonus will be FORFEITED.",
+          "To claim the bonus, you must not withdraw any funds for the first 60 days."
         ]
       },
       {

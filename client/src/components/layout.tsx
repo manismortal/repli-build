@@ -8,7 +8,9 @@ import {
   Ship,
   Languages,
   LogOut,
-  Package
+  Package,
+  ShieldCheck,
+  HeadphonesIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -64,7 +66,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const navigation = [
     { href: "/dashboard", icon: LayoutDashboard, label: "Home", labelBn: "মূলপাতা" },
     { href: "/products", icon: Package, label: "Packages", labelBn: "প্যাকেজ" },
-    { href: "/notifications", icon: Bell, label: "Notifications", labelBn: "বিজ্ঞপ্তি" },
+    { href: "/support", icon: HeadphonesIcon, label: "Support", labelBn: "সাপোর্ট" },
     { href: "/profile", icon: User, label: "Profile", labelBn: "প্রোফাইল" },
   ];
 
@@ -79,6 +81,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <span className="font-heading font-bold text-lg tracking-tight">MAERSK.LINE</span>
         </div>
         <div className="flex items-center gap-3">
+          {user.isAdmin && (
+            <Link href="/admin">
+              <Button variant="ghost" size="icon" className="text-primary h-9 w-9 rounded-xl bg-primary/10">
+                <ShieldCheck className="h-5 w-5" />
+              </Button>
+            </Link>
+          )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="text-muted-foreground h-9 w-9 rounded-xl">
@@ -95,7 +104,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <span className="text-[9px] font-bold text-muted-foreground uppercase leading-tight">
               {language === "bn" ? "ব্যালেন্স" : "Balance"}
             </span>
-            <span className="text-sm font-bold text-primary">৳{user.balance.toLocaleString()}</span>
+            <span className="text-sm font-bold text-primary">৳{Number(user.balance || 0).toLocaleString()}</span>
           </div>
         </div>
       </header>

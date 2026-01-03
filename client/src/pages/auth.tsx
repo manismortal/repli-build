@@ -1,52 +1,39 @@
-import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
-import { Ship, Anchor } from "lucide-react";
+import { Ship } from "lucide-react";
 
 import shipImage from "@assets/generated_images/maersk_shipping_container_vessel_at_sea.png";
 
 export default function AuthPage() {
-  const { login, register, user } = useAuth();
-  const [location, setLocation] = useLocation();
+  const { login, register, user, isLoading } = useAuth();
+  const [, setLocation] = useLocation();
 
   if (user) {
     setLocation("/dashboard");
     return null;
   }
 
-  const [isLoading, setIsLoading] = useState(false);
-
   const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsLoading(true);
     const formData = new FormData(e.currentTarget);
     const mobile = formData.get("mobile") as string;
     const password = formData.get("password") as string;
-    
-    setTimeout(() => {
-      login(mobile, password);
-      setIsLoading(false);
-    }, 1000);
+    login(mobile, password);
   };
 
   const handleRegister = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsLoading(true);
     const formData = new FormData(e.currentTarget);
-    const name = formData.get("name") as string;
     const mobile = formData.get("mobile") as string;
     const password = formData.get("password") as string;
-    const referral = formData.get("referral") as string;
+    const name = formData.get("name") as string;
     
-    setTimeout(() => {
-      register(name, mobile, password, referral);
-      setIsLoading(false);
-    }, 1000);
+    register(mobile, password, name);
   };
 
   return (

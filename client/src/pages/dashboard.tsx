@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { TrendingUp, Lock, Wallet, Users, ArrowUpRight } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { formatDistanceToNow } from "date-fns";
+import { NotificationPopup } from "@/components/notification-popup";
 
 const chartData = [
   { date: "Day 1", balance: 1200 },
@@ -17,10 +19,24 @@ const chartData = [
 export default function Dashboard() {
   const { user, language } = useAuth();
   
-  // Random avatar generator based on user ID or name
-  const avatarId = user?.id || user?.name?.length || 1;
-  const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${avatarId}`;
+  const balance = Number(user?.balance || 0);
+  const lockedBalance = Number((user as any)?.lockedBalance || 0);
+  const hasPackage = (user as any)?.hasPackage || false; // We need to ensure this comes from backend
+  const name = (user as any)?.name || user?.username || "User";
 
+  const referralCode = (user as any)?.referralCode || "REF123";
+  const daysAgoStr = user?.createdAt ? formatDistanceToNow(new Date(user.createdAt), { addSuffix: true }) : "recently";
+
+  // Avatar Logic
+  // Ship for package holders, Sad Emoji for no subscription
+  // We use `hasPackage` to determine
+  const avatarIcon = hasPackage 
+    ? "/attached_assets/maersk_ship.png" // Use the ship image if they have package. Or maybe a ship icon.
+    // Actually let's use a nice ship emoji or icon if image fails, but prompt says "user avater as ship and boats"
+    // I'll use a generic ship image url or the attached asset if I can.
+    // Let's use a conditional render in the JSX.
+    : null; 
+    
   const t = {
     welcome: language === "bn" ? `আবার স্বাগতম,` : `Welcome back,`,
     sub: language === "bn" ? "আপনার অ্যাকাউন্ট এক নজরে" : "Your account at a glance",
@@ -36,7 +52,7 @@ export default function Dashboard() {
     active: language === "bn" ? "সক্রিয়" : "Active",
     verified: language === "bn" ? "আপনার অ্যাকাউন্ট সক্রিয় এবং ভেরিফাইড" : "Your account is active and verified",
     memberSince: language === "bn" ? "সদস্য হয়েছেন" : "Member Since",
-    daysAgo: language === "bn" ? "৪৫ দিন আগে" : "45 days ago",
+    daysAgo: language === "bn" ? daysAgoStr : daysAgoStr,
     refCode: language === "bn" ? "রেফারেল কোড" : "Referral Code",
     copy: language === "bn" ? "কোড কপি করুন" : "COPY CODE",
     trend: language === "bn" ? "ব্যালেন্স ট্রেন্ড" : "Balance Trend",
@@ -45,6 +61,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-20">
+      <NotificationPopup />
       {/* Premium Welcome Section */}
       <div className="relative overflow-hidden bg-slate-900 rounded-[2.5rem] p-6 text-white shadow-2xl">
         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl -mr-16 -mt-16" />
@@ -52,20 +69,23 @@ export default function Dashboard() {
         
         <div className="relative flex items-center gap-4">
           <div className="relative">
-            <Avatar className="h-16 w-16 border-2 border-primary/50 p-0.5">
-              <AvatarImage src={avatarUrl} alt={user?.name} />
-              <AvatarFallback className="bg-primary/20 text-primary font-bold">
-                {user?.name?.substring(0, 2).toUpperCase()}
-              </AvatarFallback>
+            <Avatar className="h-16 w-16 border-2 border-primary/50 p-0.5 bg-white">
+              {hasPackage ? (
+                   <AvatarImage src="/attached_assets/maersk_shipping_container_vessel_at_sea.png" alt="Ship" className="object-cover" />
+              ) : (
+                  <div className="w-full h-full flex items-center justify-center text-3xl bg-slate-100 text-slate-400">
+                    😢
+                  </div>
+              )}
             </Avatar>
-            <div className="absolute -bottom-1 -right-1 bg-green-500 h-4 w-4 rounded-full border-2 border-slate-900 shadow-lg" />
+            <div className={`absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-slate-900 shadow-lg ${hasPackage ? 'bg-green-500' : 'bg-gray-400'}`} />
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <span className="text-slate-400 text-sm font-medium">{t.welcome}</span>
               <Badge variant="outline" className="border-primary/30 text-primary text-[10px] h-5 bg-primary/5">PRO</Badge>
             </div>
-            <h1 className="text-2xl font-bold font-heading tracking-tight">{user?.name}</h1>
+            <h1 className="text-2xl font-bold font-heading tracking-tight">{name}</h1>
           </div>
           <div className="h-10 w-10 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-sm border border-white/10">
             <ArrowUpRight className="h-5 w-5 text-primary" />
@@ -81,7 +101,7 @@ export default function Dashboard() {
               <span className="text-muted-foreground text-sm font-medium">{t.balance}</span>
               <Wallet className="h-4 w-4 text-primary" />
             </div>
-            <p className="text-3xl font-bold font-heading">৳{user?.balance.toFixed(2)}</p>
+            <p className="text-3xl font-bold font-heading">৳{balance.toFixed(2)}</p>
             <p className="text-xs text-muted-foreground mt-1">{t.available}</p>
           </CardContent>
         </Card>
@@ -92,7 +112,7 @@ export default function Dashboard() {
               <span className="text-muted-foreground text-sm font-medium">{t.locked}</span>
               <Lock className="h-4 w-4 text-accent" />
             </div>
-            <p className="text-3xl font-bold font-heading">৳{user?.lockedBalance.toFixed(2)}</p>
+            <p className="text-3xl font-bold font-heading">৳{lockedBalance.toFixed(2)}</p>
             <p className="text-xs text-muted-foreground mt-1">{t.activeInv}</p>
           </CardContent>
         </Card>
@@ -103,7 +123,7 @@ export default function Dashboard() {
               <span className="text-muted-foreground text-sm font-medium">{t.growth}</span>
               <TrendingUp className="h-4 w-4 text-green-600" />
             </div>
-            <p className="text-3xl font-bold font-heading">৳{(user?.balance! + user?.lockedBalance!).toFixed(2)}</p>
+            <p className="text-3xl font-bold font-heading">৳{(balance + lockedBalance).toFixed(2)}</p>
             <p className="text-xs text-green-600 mt-1">{t.thisMonth}</p>
           </CardContent>
         </Card>
@@ -143,7 +163,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between p-4 bg-secondary/50 rounded-lg border">
             <div>
               <p className="font-semibold text-sm">{t.refCode}</p>
-              <p className="text-xs text-muted-foreground font-mono text-primary">{user?.referralCode}</p>
+              <p className="text-xs text-muted-foreground font-mono text-primary">{referralCode}</p>
             </div>
             <Badge variant="secondary">{t.copy}</Badge>
           </div>

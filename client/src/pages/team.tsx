@@ -1,131 +1,118 @@
 import { useAuth } from "@/lib/auth";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, TrendingUp, Trophy, Award, Landmark } from "lucide-react";
-
-const TEAM_MEMBERS = [
-  { id: 1, name: "Fatima Khan", phone: "01712345678", role: "Regular User", joined: "45 days ago", earnings: 2450 },
-  { id: 2, name: "Ahmed Hassan", phone: "01698765432", role: "Regular User", joined: "30 days ago", earnings: 1800 },
-  { id: 3, name: "Nadia Islam", phone: "01887654321", role: "Regular User", joined: "15 days ago", earnings: 950 },
-  { id: 4, name: "Hassan Ali", phone: "01756789012", role: "Regular User", joined: "8 days ago", earnings: 450 },
-  { id: 5, name: "Sophia Rahman", phone: "01923456789", role: "Regular User", joined: "2 days ago", earnings: 100 },
-];
+import { Users, UserPlus, Trophy, Share2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Team() {
-  const referralCount = 12; // Mocking the requirement of 12 people
-  const totalTeamEarnings = TEAM_MEMBERS.reduce((sum, m) => sum + m.earnings, 0);
+  const { user, language } = useAuth();
+  const { toast } = useToast();
+  
+  const referralCode = (user as any)?.referralCode || "REF123";
+  
+  const copyReferral = () => {
+    navigator.clipboard.writeText(`https://maerskline.bd/register?ref=${referralCode}`);
+    toast({
+      title: language === "bn" ? "কপি করা হয়েছে" : "Copied",
+      description: language === "bn" ? "রেফারেল লিংক ক্লিপবোর্ডে কপি করা হয়েছে" : "Referral link copied to clipboard"
+    });
+  };
+
+  const t = {
+    title: language === "bn" ? "আমার টিম" : "My Team",
+    sub: language === "bn" ? "আপনার নেটওয়ার্ক তৈরি করুন এবং একসাথে উপার্জন করুন" : "Build your network and earn together",
+    refStats: language === "bn" ? "রেফারেল পরিসংখ্যান" : "Referral Stats",
+    totalRef: language === "bn" ? "মোট রেফারেল" : "Total Referrals",
+    activeRef: language === "bn" ? "সক্রিয় সদস্য" : "Active Members",
+    earned: language === "bn" ? "মোট আয়" : "Total Earned",
+    invite: language === "bn" ? "বন্ধুদের আমন্ত্রণ জানান" : "Invite Friends",
+    share: language === "bn" ? "আপনার অনন্য রেফারেল লিংক শেয়ার করুন এবং বোনাস উপার্জন করুন!" : "Share your unique referral link and earn bonuses!",
+    copy: language === "bn" ? "লিংক কপি করুন" : "Copy Link",
+    recent: language === "bn" ? "সাম্প্রতিক যোগদান" : "Recent Joins",
+    user: language === "bn" ? "ব্যবহারকারী" : "User",
+    joined: language === "bn" ? "যোগদান করেছেন" : "Joined",
+    status: language === "bn" ? "অবস্থা" : "Status",
+    active: language === "bn" ? "সক্রিয়" : "Active",
+    inactive: language === "bn" ? "নিষ্ক্রিয়" : "Inactive",
+    today: language === "bn" ? "আজ" : "Today",
+    yesterday: language === "bn" ? "গতকাল" : "Yesterday"
+  };
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
       <div>
-        <h1 className="text-4xl font-heading font-bold mb-2">Network</h1>
-        <p className="text-muted-foreground text-lg">Manage your referrals and grow your career</p>
+        <h1 className="text-4xl font-heading font-bold mb-2">{t.title}</h1>
+        <p className="text-muted-foreground text-lg">{t.sub}</p>
       </div>
 
-      {/* Referral Requirements */}
-      <Card className="border-primary bg-primary/5">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg font-heading flex items-center gap-2">
-            <Award className="h-5 w-5 text-primary" />
-            Withdrawal Eligibility
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between p-3 bg-card rounded-lg border mb-4">
-            <span className="text-sm font-medium">Referrals Required (5 Levels)</span>
-            <div className="flex items-center gap-2">
-              <span className="text-lg font-bold">{referralCount}/12</span>
-              {referralCount >= 12 ? <Badge className="bg-green-600">QUALIFIED</Badge> : <Badge variant="outline">PENDING</Badge>}
-            </div>
+      <div className="grid grid-cols-3 gap-4">
+        <Card className="bg-blue-500 text-white border-none shadow-lg shadow-blue-500/20">
+          <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+            <Users className="h-6 w-6 mb-2 opacity-80" />
+            <p className="text-2xl font-bold font-heading">12</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest opacity-70">{t.totalRef}</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-green-500 text-white border-none shadow-lg shadow-green-500/20">
+          <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+            <UserPlus className="h-6 w-6 mb-2 opacity-80" />
+            <p className="text-2xl font-bold font-heading">5</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest opacity-70">{t.activeRef}</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-purple-500 text-white border-none shadow-lg shadow-purple-500/20">
+          <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+            <Trophy className="h-6 w-6 mb-2 opacity-80" />
+            <p className="text-xl font-bold font-heading">৳2.4k</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest opacity-70">{t.earned}</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="hover-elevate border-dashed border-2 border-primary/20 bg-primary/5">
+        <CardContent className="p-6 text-center space-y-4">
+          <div className="h-12 w-12 bg-white rounded-full flex items-center justify-center mx-auto shadow-sm">
+            <Share2 className="h-6 w-6 text-primary" />
           </div>
-          <p className="text-xs text-muted-foreground text-center">
-            * Refer 12 people across 5 levels to unlock x12 Profit and ৳250 Welcome Bonus.
-          </p>
+          <div>
+            <h3 className="font-bold text-lg">{t.invite}</h3>
+            <p className="text-sm text-muted-foreground">{t.share}</p>
+          </div>
+          <div className="flex gap-2 p-2 bg-white rounded-xl border">
+            <code className="flex-1 flex items-center justify-center text-xs font-mono text-muted-foreground bg-secondary/50 rounded-lg">
+              maerskline.bd/register?ref={referralCode}
+            </code>
+            <Button size="sm" onClick={copyReferral}>
+              {t.copy}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
-      {/* Career Milestones */}
-      <div className="grid grid-cols-1 gap-4">
-        <Card className="hover-elevate border-l-4 border-l-blue-600">
-          <CardHeader className="pb-3">
-            <div className="flex justify-between items-start">
-              <div>
-                <CardTitle className="text-xl font-heading text-blue-600">Area Manager</CardTitle>
-                <CardDescription>Target: 50 Referrals</CardDescription>
-              </div>
-              <Landmark className="h-8 w-8 text-blue-600 opacity-20" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-semibold">Monthly Salary</span>
-                <span className="text-2xl font-bold font-heading text-blue-600">৳200,000</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="hover-elevate border-l-4 border-l-purple-600">
-          <CardHeader className="pb-3">
-            <div className="flex justify-between items-start">
-              <div>
-                <CardTitle className="text-xl font-heading text-purple-600">Regional Manager</CardTitle>
-                <CardDescription>Target: 100 Referrals</CardDescription>
-              </div>
-              <Trophy className="h-8 w-8 text-purple-600 opacity-20" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-xl">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-semibold">Monthly Salary</span>
-                <span className="text-2xl font-bold font-heading text-purple-600">৳500,000</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 gap-4">
-        <Card className="hover-elevate">
-          <CardContent className="pt-6">
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1">Direct Team</p>
-            <p className="text-3xl font-bold font-heading">{TEAM_MEMBERS.length}</p>
-          </CardContent>
-        </Card>
-        <Card className="hover-elevate">
-          <CardContent className="pt-6">
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1">Total Comms</p>
-            <p className="text-3xl font-bold font-heading">৳{totalTeamEarnings.toLocaleString()}</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Team List */}
       <Card>
         <CardHeader>
-          <CardTitle className="font-heading">Direct Team Members</CardTitle>
+          <CardTitle className="font-heading text-lg">{t.recent}</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          {TEAM_MEMBERS.map((member) => (
-            <div key={member.id} className="flex items-center justify-between p-4 bg-secondary/30 rounded-xl border border-border/50">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                  {member.name.charAt(0)}
+        <CardContent className="px-0">
+          <div className="divide-y">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex items-center justify-between p-4 hover:bg-secondary/50 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center font-bold text-muted-foreground">
+                    U{i}
+                  </div>
+                  <div>
+                    <p className="font-bold text-sm">{t.user} {9000 + i}</p>
+                    <p className="text-[10px] text-muted-foreground">{i % 2 === 0 ? t.today : t.yesterday}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-bold text-sm">{member.name}</p>
-                  <p className="text-[10px] text-muted-foreground font-mono">{member.phone}</p>
-                </div>
+                <Badge variant={i % 2 === 0 ? "default" : "secondary"}>
+                  {i % 2 === 0 ? t.active : t.inactive}
+                </Badge>
               </div>
-              <div className="text-right">
-                <p className="font-bold text-xs text-primary">+৳{member.earnings}</p>
-                <p className="text-[10px] text-muted-foreground">{member.joined}</p>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </CardContent>
       </Card>
     </div>

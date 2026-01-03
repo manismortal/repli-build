@@ -1,81 +1,120 @@
-import { useState } from "react";
-import { useLocation } from "wouter";
+import { useState, useEffect } from "react";
+import { useLocation, Link } from "wouter";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ChevronLeft, Info, Home, CreditCard } from "lucide-react";
+import { ChevronLeft, Info, Home, CreditCard, Copy, Lock, Clock, CheckCircle, Smartphone, Hash } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function BkashPayment() {
   const [location, setLocation] = useLocation();
-  const { updateBalance } = useAuth();
   const { toast } = useToast();
-  const [step, setStep] = useState(1); // 1: Amount, 2: Number, 3: PIN, 4: Success
+  
+  // Single Step Flow
   const [amount, setAmount] = useState("");
-  const [bkashNumber, setBkashNumber] = useState("");
-  const [pin, setPin] = useState("");
+  const [trxId, setTrxId] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
-  const handleConfirmAmount = () => {
+  // Agent Number State
+  const [showNumber, setShowNumber] = useState(false);
+  const [countdown, setCountdown] = useState(60);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (showNumber && countdown > 0) {
+      timer = setInterval(() => {
+        setCountdown((prev) => prev - 1);
+      }, 1000);
+    } else if (countdown === 0) {
+      setShowNumber(false);
+      setCountdown(60); 
+    }
+    return () => clearInterval(timer);
+  }, [showNumber, countdown]);
+
+  const handleNumberClick = () => {
+    setShowNumber(true);
+    setCountdown(60);
+    toast({
+        description: "Agent number revealed.",
+        duration: 1000,
+    });
+  };
+
+  const handleCopy = () => {
+      navigator.clipboard.writeText("01844556677");
+      toast({ description: "Number copied to clipboard!" });
+  };
+
+  const handleProceed = async () => {
     if (!amount || parseFloat(amount) < 10) {
-      toast({ title: "Invalid Amount", description: "Minimum deposit is ৳10", variant: "destructive" });
-      return;
-    }
-    setStep(2);
-  };
-
-  const handleConfirmNumber = () => {
-    if (bkashNumber.length < 11) {
-      toast({ title: "Invalid Number", description: "Enter a valid Bkash number", variant: "destructive" });
-      return;
-    }
-    setStep(3);
-  };
-
-  const handleConfirmPayment = () => {
-    if (pin.length < 5) {
-      toast({ title: "Invalid PIN", description: "Enter your 5-digit Bkash PIN", variant: "destructive" });
+      toast({ title: "Invalid Amount", description: "Select or enter a valid amount (Min 10)", variant: "destructive" });
       return;
     }
     
-    // Simulate payment
-    setTimeout(() => {
-      updateBalance(parseFloat(amount));
-      setStep(4);
-      toast({ title: "Payment Successful", description: `৳${amount} deposited via Bkash` });
-    }, 2000);
+    if (!trxId || trxId.length < 5) {
+        toast({ title: "Invalid TrxID", description: "Please enter a valid Transaction ID", variant: "destructive" });
+        return;
+    }
+    
+    setIsSubmitting(true);
+    try {
+      await apiRequest("POST", "/api/deposits", {
+        amount: amount,
+        transactionId: trxId
+      });
+
+      setShowSuccess(true);
+    } catch (error) {
+      toast({ title: "Failed", description: "Could not submit deposit request.", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  if (step === 4) {
+  if (showSuccess) {
     return (
       <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center animate-in fade-in zoom-in duration-500">
-        <div className="w-20 h-20 bg-[#e2136e] rounded-full flex items-center justify-center mb-6 shadow-lg shadow-[#e2136e]/20">
-          <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-          </svg>
+        <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-green-500/20">
+          <CheckCircle className="w-10 h-10 text-white" />
         </div>
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">Payment Successful</h1>
-        <p className="text-gray-500 mb-8">Your deposit of ৳{amount} has been processed.</p>
-        <Button 
-          onClick={() => setLocation("/dashboard")} 
-          className="bg-[#e2136e] hover:bg-[#c0105d] text-white w-full max-w-xs h-12 rounded-full font-bold"
-        >
-          BACK TO HOME
-        </Button>
+        <h1 className="text-2xl font-bold text-gray-800 mb-2">Request Submitted</h1>
+        <p className="text-gray-500 mb-6 text-sm leading-relaxed px-4">
+          Your balance will be credited soon. Please stay with us and trust us.
+          <br />
+          We verify every transaction manually to ensure security.
+        </p>
+        <div className="flex flex-col gap-3 w-full max-w-xs">
+            <Link href="/dashboard">
+                <Button 
+                className="bg-[#e2136e] hover:bg-[#c0105d] text-white w-full h-12 rounded-full font-bold shadow-md"
+                >
+                BACK TO HOME
+                </Button>
+            </Link>
+            <Link href="/terms">
+                <Button variant="link" className="text-gray-400 text-xs">
+                    View Terms & Conditions
+                </Button>
+            </Link>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#f1f1f1] flex flex-col font-sans">
-      {/* Bkash Header */}
-      <header className="bg-[#e2136e] text-white p-4 flex items-center justify-between sticky top-0 z-50">
+    <div className="min-h-screen bg-[#f8fafc] flex flex-col font-sans">
+      {/* Header */}
+      <header className="bg-[#e2136e] text-white p-4 flex items-center justify-between sticky top-0 z-50 shadow-md">
         <div className="flex items-center gap-3">
-          <button onClick={() => step > 1 ? setStep(step - 1) : setLocation("/wallet")} className="p-1">
+          <button onClick={() => setLocation("/wallet")} className="p-1 hover:bg-white/10 rounded-full transition-colors">
             <ChevronLeft className="h-6 w-6" />
           </button>
           <div className="flex flex-col">
-            <span className="font-bold text-lg leading-none">bKash</span>
-            <span className="text-[10px] opacity-80 uppercase tracking-tighter">Merchant Payment</span>
+            <span className="font-bold text-lg leading-none">Deposit</span>
+            <span className="text-[10px] opacity-80 uppercase tracking-tighter">bKash Agent</span>
           </div>
         </div>
         <div className="bg-white/20 p-2 rounded-full">
@@ -83,137 +122,112 @@ export default function BkashPayment() {
         </div>
       </header>
 
-      {/* Main Container */}
-      <div className="flex-1 flex flex-col max-w-md mx-auto w-full bg-white shadow-sm overflow-hidden">
-        {/* Merchant Info */}
-        <div className="p-5 flex items-center gap-4 border-b">
-          <div className="h-12 w-12 bg-[#e2136e]/10 rounded-lg flex items-center justify-center overflow-hidden border border-[#e2136e]/20 p-2">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/8/88/BKash_Logo.svg" alt="Bkash" className="w-full h-full object-contain" />
-          </div>
-          <div>
-            <p className="font-bold text-gray-800 text-sm">MAERSK.Line BD</p>
-            <p className="text-xs text-gray-500">Merchant: 01844556677</p>
-          </div>
-        </div>
-
-        {/* Steps */}
-        <div className="flex-1 p-6 space-y-8 animate-in slide-in-from-right-4 duration-300">
-          {step === 1 && (
-            <div className="space-y-6">
-              <div className="text-center">
-                <p className="text-sm text-gray-500 mb-2">Enter Amount</p>
-                <div className="relative inline-block">
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 text-2xl font-bold text-[#e2136e]">৳</span>
-                  <input
-                    type="number"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    placeholder="0"
-                    className="text-5xl font-bold text-center w-full focus:outline-none placeholder:text-gray-200 pl-6"
-                    autoFocus
-                  />
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col max-w-md mx-auto w-full p-4 space-y-6">
+        
+        {/* Agent Number Section */}
+        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+            <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 bg-[#e2136e]/10 rounded-full flex items-center justify-center text-[#e2136e]">
+                    <Smartphone className="h-5 w-5" />
                 </div>
-              </div>
-              
-              <div className="grid grid-cols-3 gap-3">
-                {[500, 1000, 2000, 5000, 10000, 20000].map((val) => (
-                  <button 
-                    key={val} 
-                    onClick={() => setAmount(val.toString())}
-                    className="py-3 border rounded-lg text-sm font-bold text-gray-600 hover:border-[#e2136e] hover:text-[#e2136e] transition-colors"
-                  >
-                    ৳{val}
-                  </button>
-                ))}
-              </div>
-
-              <div className="bg-blue-50 p-4 rounded-xl flex gap-3 items-start">
-                <Info className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
-                <p className="text-xs text-blue-600 leading-relaxed">
-                  The amount will be instantly credited to your MAERSK wallet. Minimum deposit is ৳10.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {step === 2 && (
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700">Enter Your bKash Account Number</label>
-                <div className="relative">
-                  <Input
-                    value={bkashNumber}
-                    onChange={(e) => setBkashNumber(e.target.value)}
-                    placeholder="e.g. 017XXXXXXXX"
-                    className="h-14 text-lg border-2 focus-visible:ring-[#e2136e] rounded-xl"
-                    maxLength={11}
-                  />
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                    <CreditCard className="h-5 w-5 text-gray-400" />
-                  </div>
-                </div>
-              </div>
-              <p className="text-[11px] text-gray-400">
-                By clicking confirm, you agree to bKash's Terms & Conditions for merchant payment.
-              </p>
-            </div>
-          )}
-
-          {step === 3 && (
-            <div className="space-y-6">
-              <div className="bg-[#f8f8f8] p-4 rounded-xl flex justify-between items-center mb-6">
                 <div>
-                  <p className="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Amount to Pay</p>
-                  <p className="text-2xl font-bold text-gray-800">৳{amount}</p>
+                    <h3 className="font-bold text-slate-800 text-sm">Send Money to Agent</h3>
+                    <p className="text-[10px] text-slate-500">Cash Out to this number</p>
                 </div>
-                <div className="text-right">
-                  <p className="text-[10px] text-gray-500 uppercase font-bold tracking-widest">To</p>
-                  <p className="text-sm font-bold text-[#e2136e]">MAERSK.Line BD</p>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700">Enter Your bKash PIN</label>
-                <Input
-                  type="password"
-                  value={pin}
-                  onChange={(e) => setPin(e.target.value)}
-                  placeholder="• • • • •"
-                  className="h-14 text-2xl tracking-[0.5em] text-center border-2 focus-visible:ring-[#e2136e] rounded-xl"
-                  maxLength={5}
-                />
-              </div>
-
-              <div className="flex gap-2 items-center justify-center text-[#e2136e]">
-                <div className="w-2 h-2 rounded-full bg-[#e2136e] animate-bounce" />
-                <div className="w-2 h-2 rounded-full bg-[#e2136e] animate-bounce [animation-delay:0.2s]" />
-                <div className="w-2 h-2 rounded-full bg-[#e2136e] animate-bounce [animation-delay:0.4s]" />
-              </div>
             </div>
-          )}
+            
+            <div className="bg-slate-50 border border-dashed border-slate-300 rounded-xl p-3 flex items-center justify-between">
+                {!showNumber ? (
+                    <button 
+                        onClick={handleNumberClick}
+                        className="text-sm font-bold text-[#e2136e] w-full text-left"
+                    >
+                        Click to view Agent Number
+                    </button>
+                ) : (
+                    <div className="flex flex-col">
+                        <span className="text-lg font-mono font-bold text-slate-800 tracking-wider">01844556677</span>
+                        <span className="text-[10px] text-orange-500 font-bold">Hides in {countdown}s</span>
+                    </div>
+                )}
+                
+                {showNumber && (
+                    <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        onClick={handleCopy}
+                        className="text-[#e2136e] hover:bg-[#e2136e]/10 h-8 w-8 p-0 rounded-full"
+                    >
+                        <Copy className="h-4 w-4" />
+                    </Button>
+                )}
+            </div>
         </div>
 
-        {/* Footer Action */}
-        <div className="p-4 bg-white border-t space-y-3">
-          <Button 
-            className="w-full bg-[#e2136e] hover:bg-[#c0105d] text-white h-14 rounded-xl font-bold text-lg shadow-lg shadow-[#e2136e]/20"
-            onClick={step === 1 ? handleConfirmAmount : step === 2 ? handleConfirmNumber : handleConfirmPayment}
-          >
-            {step === 3 ? "CONFIRM PAYMENT" : "NEXT"}
-          </Button>
-          <Button 
-            variant="ghost" 
-            className="w-full text-gray-400 font-bold h-10 hover:text-[#e2136e]"
-            onClick={() => setLocation("/wallet")}
-          >
-            CANCEL
-          </Button>
+        {/* Amount Selection */}
+        <div className="space-y-3">
+            <label className="text-sm font-bold text-slate-700 ml-1">Select Amount</label>
+            <div className="grid grid-cols-3 gap-3">
+                {[250, 500, 1500, 2000, 5000].map((val) => (
+                    <button
+                        key={val}
+                        onClick={() => setAmount(val.toString())}
+                        className={`py-3 rounded-xl text-sm font-bold border transition-all duration-200 ${
+                            amount === val.toString() 
+                            ? 'bg-[#e2136e] text-white border-[#e2136e] shadow-md shadow-[#e2136e]/20' 
+                            : 'bg-white text-slate-600 border-slate-200 hover:border-[#e2136e]/50'
+                        }`}
+                    >
+                        ৳{val}
+                    </button>
+                ))}
+                 <div className="relative col-span-1">
+                    <input
+                        type="number"
+                        placeholder="Custom"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        className={`w-full h-full rounded-xl text-sm font-bold text-center border focus:outline-none transition-all ${
+                            ![250, 500, 1500, 2000, 5000].includes(Number(amount)) && amount
+                            ? 'border-[#e2136e] bg-[#e2136e]/5 text-[#e2136e]'
+                            : 'border-slate-200 bg-white'
+                        }`}
+                    />
+                 </div>
+            </div>
         </div>
-      </div>
 
-      {/* bKash Banner Bottom */}
-      <div className="p-4 text-center">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/8/88/BKash_Logo.svg" alt="Bkash" className="h-6 mx-auto opacity-30 grayscale" />
+        {/* Transaction ID Input */}
+        <div className="space-y-3">
+             <label className="text-sm font-bold text-slate-700 ml-1">Transaction ID (TrxID)</label>
+             <div className="relative">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                    <Hash className="h-4 w-4" />
+                </div>
+                <Input 
+                    value={trxId}
+                    onChange={(e) => setTrxId(e.target.value)}
+                    placeholder="e.g. 9H7G6F5D"
+                    className="h-14 pl-10 text-lg border-slate-200 focus-visible:ring-[#e2136e] rounded-xl bg-white uppercase font-mono placeholder:normal-case"
+                />
+             </div>
+             <p className="text-[11px] text-slate-400 px-1">
+                Enter the unique Transaction ID you received from bKash after sending money.
+             </p>
+        </div>
+
+        {/* Submit Button */}
+        <div className="pt-4">
+            <Button 
+                onClick={handleProceed}
+                disabled={isSubmitting}
+                className="w-full h-14 bg-[#e2136e] hover:bg-[#c0105d] text-white rounded-xl font-bold text-lg shadow-lg shadow-[#e2136e]/20 transition-all active:scale-[0.98]"
+            >
+                {isSubmitting ? "PROCESSING..." : "PROCEED"}
+            </Button>
+        </div>
+
       </div>
     </div>
   );

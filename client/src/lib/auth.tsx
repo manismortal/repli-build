@@ -1,142 +1,157 @@
-import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import { createContext, useContext, ReactNode, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import type { User, InsertUser } from "@shared/schema";
+import { useLocation } from "wouter";
 
-// Types
-export type User = {
-  id: string;
-  name: string;
-  mobile: string;
-  role: "user" | "admin" | "area_manager" | "regional_manager";
-  balance: number;
-  lockedBalance: number;
-  referralCode: string;
-  isFrozen: boolean;
-};
+// =================================================================
+// API Fetcher Functions
+// =================================================================
 
-type Language = "bn" | "en";
+async function fetchMe(): Promise<User> {
+  const res = await fetch("/api/auth/me");
+  if (!res.ok) {
+    if (res.status === 401) {
+      throw new Error("Not authenticated");
+    }
+    throw new Error("Failed to fetch user");
+  }
+  return res.json();
+}
+
+async function loginUser(credentials: Omit<InsertUser, "password"> & { password: InsertUser["password"] }): Promise<User> {
+  const res = await fetch("/api/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(credentials),
+  });
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.message || "Login failed");
+  }
+  return res.json();
+}
+
+async function registerUser(credentials: InsertUser): Promise<User> {
+  const res = await fetch("/api/auth/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(credentials),
+  });
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.message || "Registration failed");
+  }
+  return res.json();
+}
+
+async function logoutUser(): Promise<{ message: string }> {
+  const res = await fetch("/api/auth/logout", {
+    method: "POST",
+  });
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.message || "Logout failed");
+  }
+  return res.json();
+}
+
+
+// =================================================================
+// Auth Context & Provider
+// =================================================================
 
 type AuthContextType = {
-  user: User | null;
-  language: Language;
-  setLanguage: (lang: Language) => void;
-  login: (mobile: string, pass: string) => void;
-  register: (name: string, mobile: string, pass: string, refCode?: string) => void;
+  user: User | null | undefined;
+  login: (username: string, password: string) => void;
+  register: (username: string, password: string, name?: string) => void;
   logout: () => void;
-  updateBalance: (amount: number) => void;
+  isLoading: boolean;
+  language: "en" | "bn";
+  setLanguage: (lang: "en" | "bn") => void;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock Data
-const MOCK_USER: User = {
-  id: "u1",
-  name: "রহিম আহমেদ",
-  mobile: "01712345678",
-  role: "user",
-  balance: 1500.00,
-  lockedBalance: 5000.00,
-  referralCode: "MAERSK123",
-  isFrozen: false,
-};
-
-const MOCK_ADMIN: User = {
-  id: "a1",
-  name: "অ্যাডমিন ইউজার",
-  mobile: "admin",
-  role: "admin",
-  balance: 999999,
-  lockedBalance: 0,
-  referralCode: "ADMIN",
-  isFrozen: false,
-};
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [language, setLanguageState] = useState<Language>("bn");
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
+  const [language, setLanguage] = useState<"en" | "bn">("bn");
 
-  useEffect(() => {
-    const stored = localStorage.getItem("maersk_session");
-    if (stored) {
-      setUser(JSON.parse(stored));
-    }
-    const storedLang = localStorage.getItem("maersk_lang") as Language;
-    if (storedLang) {
-      setLanguageState(storedLang);
-    }
-  }, []);
+  // Query to get the current user
+  const { data: user, isLoading, isError } = useQuery<User, Error>({
+    queryKey: ["user", "me"],
+    queryFn: fetchMe,
+    retry: (failureCount, error) => {
+        // Do not retry on 401 errors
+        return error.message !== 'Not authenticated' && failureCount < 2;
+    },
+  });
 
-  const setLanguage = (lang: Language) => {
-    setLanguageState(lang);
-    localStorage.setItem("maersk_lang", lang);
+  // Mutation for logging in
+  const loginMutation = useMutation({
+    mutationFn: loginUser,
+    onSuccess: (newUser) => {
+      queryClient.setQueryData(["user", "me"], newUser);
+      toast({ title: "Login Successful", description: "Welcome back!" });
+      setLocation("/dashboard");
+    },
+    onError: (error) => {
+      toast({ title: "Login Failed", description: error.message, variant: "destructive" });
+    },
+  });
+  
+  // Mutation for registering
+  const registerMutation = useMutation({
+    mutationFn: registerUser,
+    onSuccess: (newUser) => {
+        queryClient.setQueryData(["user", "me"], newUser);
+        toast({ title: "Registration Successful", description: "Your account has been created." });
+        setLocation("/dashboard");
+    },
+    onError: (error) => {
+      toast({ title: "Registration Failed", description: error.message, variant: "destructive" });
+    },
+  });
+
+  // Mutation for logging out
+  const logoutMutation = useMutation({
+    mutationFn: logoutUser,
+    onSuccess: () => {
+      queryClient.setQueryData(["user", "me"], null);
+      toast({ title: "Logged Out" });
+      setLocation("/auth");
+    },
+    onError: (error) => {
+      toast({ title: "Logout Failed", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const authContextValue: AuthContextType = {
+    user: isError ? null : user,
+    login: (username, password) => loginMutation.mutate({ username, password }),
+    register: (username, password, name) => registerMutation.mutate({ username, password, name }),
+    logout: () => logoutMutation.mutate(),
+    isLoading: isLoading || loginMutation.isPending || registerMutation.isPending,
+    language,
+    setLanguage
   };
-
-  const login = (mobile: string, pass: string) => {
-    if (mobile === "admin" && pass === "admin") {
-      setUser(MOCK_ADMIN);
-      localStorage.setItem("maersk_session", JSON.stringify(MOCK_ADMIN));
-      toast({ title: language === "bn" ? "আবার স্বাগতম, অ্যাডমিন" : "Welcome back, Admin" });
-      return;
-    }
-    
-    if (mobile && pass) {
-      const newUser = { ...MOCK_USER, mobile, name: language === "bn" ? "ডেমো ইউজার" : "Demo User" };
-      setUser(newUser);
-      localStorage.setItem("maersk_session", JSON.stringify(newUser));
-      toast({ 
-        title: language === "bn" ? "লগইন সফল হয়েছে" : "Login Successful", 
-        description: language === "bn" ? "MAERSK.Line BD-তে আপনাকে স্বাগতম" : "Welcome to MAERSK.Line BD" 
-      });
-    } else {
-      toast({ 
-        title: language === "bn" ? "লগইন ব্যর্থ হয়েছে" : "Login Failed", 
-        variant: "destructive" 
-      });
-    }
-  };
-
-  const register = (name: string, mobile: string, pass: string, refCode?: string) => {
-    const newUser: User = {
-      id: Math.random().toString(36).substr(2, 9),
-      name,
-      mobile,
-      role: "user",
-      balance: 0,
-      lockedBalance: 0,
-      referralCode: Math.random().toString(36).substr(2, 6).toUpperCase(),
-      isFrozen: false
-    };
-    setUser(newUser);
-    localStorage.setItem("maersk_session", JSON.stringify(newUser));
-    toast({ 
-      title: language === "bn" ? "নিবন্ধন সফল হয়েছে" : "Registration Successful", 
-      description: language === "bn" ? "আপনার অ্যাকাউন্ট তৈরি করা হয়েছে।" : "Your account has been created." 
-    });
-  };
-
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem("maersk_session");
-    toast({ title: language === "bn" ? "লগ আউট হয়েছে" : "Logged out" });
-  };
-
-  const updateBalance = (amount: number) => {
-    if (user) {
-      const updated = { ...user, balance: user.balance + amount };
-      setUser(updated);
-      localStorage.setItem("maersk_session", JSON.stringify(updated));
-    }
-  }
 
   return (
-    <AuthContext.Provider value={{ user, language, setLanguage, login, register, logout, updateBalance }}>
+    <AuthContext.Provider value={authContextValue}>
       {children}
     </AuthContext.Provider>
   );
 }
 
+// =================================================================
+// useAuth Hook
+// =================================================================
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) throw new Error("useAuth must be used within AuthProvider");
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
   return context;
 }

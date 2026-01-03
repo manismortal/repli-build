@@ -55,8 +55,8 @@ export default function Profile() {
             <ShieldCheck className="h-4 w-4 text-white" />
           </div>
         </div>
-        <h1 className="text-2xl font-bold font-heading">{user?.name}</h1>
-        <p className="text-muted-foreground text-sm">{user?.mobile}</p>
+        <h1 className="text-2xl font-bold font-heading">{user?.name || user?.username}</h1>
+        <p className="text-muted-foreground text-sm">{user?.username}</p>
         <div className="mt-2 inline-flex items-center gap-1.5 bg-green-50 text-green-700 px-3 py-1 rounded-full text-xs font-bold border border-green-100">
           <Briefcase className="h-3 w-3" />
           {t.verify}
