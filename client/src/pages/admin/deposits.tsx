@@ -1,23 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
+import { AdminTable } from "@/components/admin/ui/data-table";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
 import { Check, X } from "lucide-react";
+import { format } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function AdminDeposits() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: deposits, isLoading } = useQuery({
-    queryKey: ["admin", "deposits"],
+    queryKey: ["admin-deposits"],
     queryFn: async () => {
       const res = await fetch("/api/admin/deposits");
       if (!res.ok) throw new Error("Failed to fetch deposits");
@@ -25,72 +20,95 @@ export default function AdminDeposits() {
     },
   });
 
-  const updateStatusMutation = useMutation({
+  const mutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const res = await fetch(`/api/admin/deposits/${id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
-      });
-      if (!res.ok) throw new Error("Failed to update status");
-      return res.json();
+      await apiRequest("POST", `/api/admin/deposits/${id}`, { status });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin", "deposits"] });
-      queryClient.invalidateQueries({ queryKey: ["admin", "stats"] });
-      toast({ title: "Status Updated" });
+      queryClient.invalidateQueries({ queryKey: ["admin-deposits"] });
+      toast({ title: "Success", description: "Deposit status updated" });
     },
     onError: () => {
-      toast({ title: "Update Failed", variant: "destructive" });
-    },
+      toast({ title: "Error", description: "Failed to update status", variant: "destructive" });
+    }
   });
 
-  if (isLoading) return <div>Loading...</div>;
+  const columns = [
+    {
+      header: "User",
+      accessor: "username",
+      className: "font-bold text-slate-700"
+    },
+    {
+      header: "Amount",
+      accessor: (d: any) => <span className="font-mono font-bold text-green-600">৳{Number(d.amount).toLocaleString()}</span>
+    },
+    {
+      header: "TrxID",
+      accessor: (d: any) => <span className="font-mono text-xs bg-slate-100 px-2 py-1 rounded">{d.transactionId}</span>
+    },
+    {
+      header: "Status",
+      accessor: (d: any) => {
+        const colors = {
+          pending: "bg-yellow-100 text-yellow-700",
+          approved: "bg-green-100 text-green-700",
+          rejected: "bg-red-100 text-red-700"
+        };
+        return (
+          <Badge className={`border-none ${colors[d.status as keyof typeof colors]}`}>
+            {d.status.toUpperCase()}
+          </Badge>
+        );
+      }
+    },
+    {
+      header: "Date",
+      accessor: (d: any) => <span className="text-xs text-muted-foreground">{format(new Date(d.createdAt), "MMM d, HH:mm")}</span>,
+      className: "hidden md:table-cell"
+    },
+    {
+      header: "Actions",
+      accessor: (d: any) => (
+        d.status === 'pending' ? (
+          <div className="flex gap-2 justify-end">
+            <Button 
+              size="icon" 
+              className="h-8 w-8 bg-green-500 hover:bg-green-600 text-white rounded-full shadow-md shadow-green-200"
+              onClick={() => mutation.mutate({ id: d.id, status: 'approved' })}
+            >
+              <Check className="h-4 w-4" />
+            </Button>
+            <Button 
+              size="icon" 
+              variant="destructive"
+              className="h-8 w-8 rounded-full shadow-md shadow-red-200"
+              onClick={() => mutation.mutate({ id: d.id, status: 'rejected' })}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        ) : null
+      ),
+      className: "text-right"
+    }
+  ];
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-heading font-bold">Deposit Requests</h1>
-      <div className="border rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>User</TableHead>
-              <TableHead>Amount</TableHead>
-              <TableHead>Transaction ID</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Requested</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {deposits?.map((d: any) => (
-              <TableRow key={d.id}>
-                <TableCell className="font-medium">{d.username}</TableCell>
-                <TableCell>৳{Number(d.amount).toLocaleString()}</TableCell>
-                <TableCell className="font-mono text-xs">{d.transactionId}</TableCell>
-                <TableCell>
-                  <Badge variant={d.status === 'approved' ? 'default' : d.status === 'rejected' ? 'destructive' : 'secondary'}>
-                    {d.status.toUpperCase()}
-                  </Badge>
-                </TableCell>
-                <TableCell>{new Date(d.createdAt).toLocaleDateString()}</TableCell>
-                <TableCell>
-                  {d.status === 'pending' && (
-                    <div className="flex gap-2">
-                      <Button size="sm" onClick={() => updateStatusMutation.mutate({ id: d.id, status: 'approved' })}>
-                        <Check className="h-4 w-4" />
-                      </Button>
-                      <Button size="sm" variant="destructive" onClick={() => updateStatusMutation.mutate({ id: d.id, status: 'rejected' })}>
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+      <div>
+        <h1 className="text-3xl font-heading font-bold">Deposit Requests</h1>
+        <p className="text-muted-foreground">Review and process user deposit transactions.</p>
       </div>
+
+      <AdminTable 
+        title="Recent Deposits" 
+        columns={columns} 
+        data={deposits || []} 
+        isLoading={isLoading}
+        searchPlaceholder="Search TrxID..."
+      />
     </div>
   );
 }
+

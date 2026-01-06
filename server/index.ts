@@ -1,37 +1,19 @@
 import express, { type Request, Response, NextFunction } from "express";
-import { registerRoutes } from "./routes";
-import { serveStatic } from "./static";
 import { createServer } from "http";
+import { registerRoutes } from "./routes";
+import { setupVite, serveStatic, log } from "./vite";
+import { agentService } from "./services/agent";
 
 const app = express();
-const httpServer = createServer(app);
-
-declare module "http" {
-  interface IncomingMessage {
-    rawBody: unknown;
-  }
-}
-
-app.use(
-  express.json({
-    verify: (req, _res, buf) => {
-      req.rawBody = buf;
-    },
-  }),
-);
-
+app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-export function log(message: string, source = "express") {
-  const formattedTime = new Date().toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
-  });
+// Setup Agent Rotation (Every Hour)
+setInterval(() => {
+  agentService.rotateAgents();
+}, 60 * 60 * 1000); // 1 Hour
 
-  console.log(`${formattedTime} [${source}] ${message}`);
-}
+const httpServer = createServer(app);
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -50,6 +32,10 @@ app.use((req, res, next) => {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+      }
+
+      if (logLine.length > 80) {
+        logLine = logLine.slice(0, 79) + "…";
       }
 
       log(logLine);
@@ -73,23 +59,17 @@ app.use((req, res, next) => {
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
-  if (process.env.NODE_ENV === "production") {
+  if (app.get("env") === "production") {
     serveStatic(app);
   } else {
-    const { setupVite } = await import("./vite");
     await setupVite(httpServer, app);
   }
 
-  httpServer.on("error", (err) => {
-    log(`Server error: ${err.message}`);
-  });
-
   // ALWAYS serve the app on the port specified in the environment variable PORT
   // Other ports are firewalled. Default to 5001 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || "5001", 10);
+  const port = parseInt(process.env.PORT || "5000", 10);
   const host = "0.0.0.0";
+  
   httpServer.listen(port, host, () => {
     log(`serving on http://${host}:${port}`);
   });

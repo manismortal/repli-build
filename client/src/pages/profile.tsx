@@ -9,95 +9,149 @@ import {
   ChevronRight, 
   LogOut, 
   ShieldCheck,
-  User as UserIcon,
   Briefcase,
-  FileText
+  FileText,
+  UserCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { UserAvatar } from "@/components/user-avatar";
+import { Badge } from "@/components/ui/badge";
 
 export default function Profile() {
   const { user, logout, language } = useAuth();
 
+  const hasPackage = user?.hasPackage || false;
+
   const t = {
     title: language === "bn" ? "প্রোফাইল সেটিংস" : "Profile Settings",
     sub: language === "bn" ? "আপনার অ্যাকাউন্ট এবং ফিন্যান্স ম্যানেজ করুন" : "Manage your account and finances",
-    wallet: language === "bn" ? "ওয়ালেট তথ্য" : "Wallet Information",
-    walletSub: language === "bn" ? "ব্যালেন্স এবং লেনদেন" : "Balance and transactions",
-    tasks: language === "bn" ? "দৈনিক টাস্ক" : "Daily Tasks",
-    tasksSub: language === "bn" ? "আপনার প্রগতি দেখুন" : "View your progress",
-    team: language === "bn" ? "আমার নেটওয়ার্ক" : "My Network",
-    teamSub: language === "bn" ? "রেফারেল এবং ইনকাম" : "Referrals and earnings",
-    settings: language === "bn" ? "অ্যাকাউন্ট সেটিংস" : "Account Settings",
-    settingsSub: language === "bn" ? "প্রোফাইল আপডেট করুন" : "Update your profile",
-    tc: language === "bn" ? "শর্তাবলী" : "Terms and Conditions",
-    tcSub: language === "bn" ? "প্ল্যাটফর্মের নিয়মাবলী দেখুন" : "View platform guidelines",
+    wallet: language === "bn" ? "ওয়ালেট" : "Wallet",
+    walletSub: language === "bn" ? "ব্যালেন্স ও লেনদেন" : "Balance & Trans",
+    tasks: language === "bn" ? "টাস্ক" : "Tasks",
+    tasksSub: language === "bn" ? "দৈনিক প্রগতি" : "Daily Progress",
+    team: language === "bn" ? "টিম" : "Team",
+    teamSub: language === "bn" ? "রেফারেল নেটওয়ার্ক" : "Referral Network",
+    settings: language === "bn" ? "সেটিংস" : "Settings",
+    settingsSub: language === "bn" ? "অ্যাকাউন্ট কনফিগারেশন" : "Account Config",
+    tc: language === "bn" ? "শর্তাবলী" : "T&C",
+    tcSub: language === "bn" ? "আইনি তথ্য" : "Legal Info",
     logout: language === "bn" ? "লগ আউট" : "Logout",
-    verify: language === "bn" ? "ভেরিফাইড অ্যাকাউন্ট" : "Verified Account"
+    verify: language === "bn" ? "ভেরিফাইড" : "Verified",
+    role: language === "bn" ? "ভূমিকা" : "Role",
+    memberId: language === "bn" ? "মেম্বার আইডি" : "Member ID",
+    quickActions: language === "bn" ? "দ্রুত অ্যাকশন" : "Quick Actions",
+    support: language === "bn" ? "সাপোর্ট" : "Support",
+    joined: language === "bn" ? "যোগদান" : "Joined"
   };
 
-  const menuItems = [
-    { href: "/wallet", icon: Wallet, color: "text-blue-600", bg: "bg-blue-100", title: t.wallet, desc: t.walletSub },
-    { href: "/tasks", icon: CheckSquare, color: "text-orange-600", bg: "bg-orange-100", title: t.tasks, desc: t.tasksSub },
-    { href: "/team", icon: Users, color: "text-purple-600", bg: "bg-purple-100", title: t.team, desc: t.teamSub },
-    { href: "/settings", icon: Settings, color: "text-gray-600", bg: "bg-gray-100", title: t.settings, desc: t.settingsSub },
-    { href: "/terms", icon: FileText, color: "text-cyan-600", bg: "bg-cyan-100", title: t.tc, desc: t.tcSub },
+  const quickLinks = [
+    { href: "/wallet", icon: Wallet, label: t.wallet, sub: t.walletSub, color: "bg-blue-500" },
+    { href: "/tasks", icon: CheckSquare, label: t.tasks, sub: t.tasksSub, color: "bg-orange-500" },
+    { href: "/team", icon: Users, label: t.team, sub: t.teamSub, color: "bg-purple-500" },
+    { href: "/settings", icon: Settings, label: t.settings, sub: t.settingsSub, color: "bg-slate-600" },
   ];
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
-      <header className="text-center pb-4">
-        <div className="relative inline-block mb-4">
-          <div className="h-24 w-24 rounded-full bg-primary/10 flex items-center justify-center border-4 border-background shadow-xl">
-            <UserIcon className="h-12 w-12 text-primary" />
+    <div className="min-h-screen bg-[#f8fafc] pb-24">
+      {/* Professional Header */}
+      <div className="bg-slate-900 pt-8 pb-16 px-6 rounded-b-[2.5rem] relative overflow-hidden shadow-xl">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -mr-20 -mt-20" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl -ml-16 -mb-16" />
+        
+        <div className="relative z-10 flex flex-col items-center">
+          <UserAvatar user={{ ...user, hasPackage } as any} size="xl" className="shadow-2xl ring-4 ring-white/10" />
+          
+          <h1 className="text-2xl font-bold font-heading text-white mt-4 tracking-tight">
+            {user?.name || user?.username}
+          </h1>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-slate-400 text-sm font-medium">@{user?.username}</p>
+            <Badge variant="secondary" className="h-5 px-2 text-[10px] font-bold bg-white/10 text-white hover:bg-white/20 border-none">
+              {hasPackage ? "PRO" : "FREE"}
+            </Badge>
           </div>
-          <div className="absolute -bottom-1 -right-1 bg-green-500 p-1.5 rounded-full border-4 border-background">
-            <ShieldCheck className="h-4 w-4 text-white" />
-          </div>
-        </div>
-        <h1 className="text-2xl font-bold font-heading">{user?.name || user?.username}</h1>
-        <p className="text-muted-foreground text-sm">{user?.username}</p>
-        <div className="mt-2 inline-flex items-center gap-1.5 bg-green-50 text-green-700 px-3 py-1 rounded-full text-xs font-bold border border-green-100">
-          <Briefcase className="h-3 w-3" />
-          {t.verify}
-        </div>
-      </header>
 
-      <div className="grid gap-3">
-        {menuItems.map((item, index) => (
-          <Link key={item.href} href={item.href}>
-            <motion.div 
-              whileHover={{ x: 4 }}
-              whileTap={{ scale: 0.98 }}
-              className="group flex items-center justify-between p-4 bg-card rounded-[2rem] border border-border/50 hover:border-primary/30 hover:shadow-lg transition-all cursor-pointer"
-            >
-              <div className="flex items-center gap-4">
-                <div className={`h-12 w-12 ${item.bg} ${item.color} rounded-2xl flex items-center justify-center transition-transform group-hover:rotate-6`}>
-                  <item.icon className="h-6 w-6" />
+          <div className="flex gap-4 mt-6 w-full max-w-sm justify-center">
+             <div className="bg-white/5 backdrop-blur-md rounded-2xl p-3 flex-1 text-center border border-white/10">
+                <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">{t.joined}</p>
+                <p className="text-white font-heading font-bold text-sm mt-1">
+                  {new Date(user?.createdAt || Date.now()).getFullYear()}
+                </p>
+             </div>
+             <div className="bg-white/5 backdrop-blur-md rounded-2xl p-3 flex-1 text-center border border-white/10">
+                <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">{t.verify}</p>
+                <div className="flex justify-center mt-1">
+                  <ShieldCheck className="h-5 w-5 text-green-400" />
                 </div>
-                <div>
-                  <p className="font-bold tracking-tight">{item.title}</p>
-                  <p className="text-xs text-muted-foreground">{item.desc}</p>
-                </div>
-              </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
-            </motion.div>
-          </Link>
-        ))}
+             </div>
+          </div>
+        </div>
       </div>
 
-      <Button 
-        variant="destructive" 
-        className="w-full h-14 rounded-[2rem] font-heading text-lg mt-4 shadow-lg shadow-destructive/10"
-        onClick={logout}
-      >
-        <LogOut className="h-5 w-5 mr-2" />
-        {t.logout}
-      </Button>
+      <div className="px-6 -mt-8 relative z-20 space-y-6 animate-in slide-in-from-bottom-4 duration-700">
+        
+        {/* Quick Grid */}
+        <div className="grid grid-cols-2 gap-4">
+          {quickLinks.map((item, idx) => (
+            <Link key={idx} href={item.href}>
+              <motion.div 
+                whileTap={{ scale: 0.98 }}
+                className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center text-center gap-3 hover:shadow-md transition-all"
+              >
+                <div className={`h-10 w-10 ${item.color} rounded-xl flex items-center justify-center text-white shadow-lg shadow-${item.color}/20`}>
+                  <item.icon className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="font-bold text-slate-800 text-sm">{item.label}</p>
+                  <p className="text-[10px] text-slate-400 font-medium">{item.sub}</p>
+                </div>
+              </motion.div>
+            </Link>
+          ))}
+        </div>
 
-      <p className="text-center text-[10px] text-muted-foreground pt-4 uppercase tracking-[0.2em] font-bold">
-        MAERSK.Line Bangladesh v1.2.0
-      </p>
+        {/* Menu List */}
+        <Card className="border-none shadow-sm overflow-hidden">
+          <CardContent className="p-0 divide-y divide-slate-100">
+            <Link href="/terms">
+              <div className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer group">
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 bg-cyan-50 text-cyan-600 rounded-xl flex items-center justify-center group-hover:bg-cyan-100 transition-colors">
+                    <FileText className="h-5 w-5" />
+                  </div>
+                  <span className="font-bold text-slate-700 text-sm">{t.tc}</span>
+                </div>
+                <ChevronRight className="h-5 w-5 text-slate-300 group-hover:text-slate-600" />
+              </div>
+            </Link>
+            <Link href="/support">
+              <div className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer group">
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center group-hover:bg-indigo-100 transition-colors">
+                    <UserCheck className="h-5 w-5" />
+                  </div>
+                  <span className="font-bold text-slate-700 text-sm">{t.support}</span>
+                </div>
+                <ChevronRight className="h-5 w-5 text-slate-300 group-hover:text-slate-600" />
+              </div>
+            </Link>
+          </CardContent>
+        </Card>
+
+        <Button 
+          variant="destructive" 
+          className="w-full h-14 rounded-2xl font-heading text-lg shadow-lg shadow-destructive/20"
+          onClick={logout}
+        >
+          <LogOut className="h-5 w-5 mr-2" />
+          {t.logout}
+        </Button>
+
+        <p className="text-center text-[10px] text-slate-400 uppercase tracking-widest font-bold">
+          MAERSK.Line BD v1.2.0
+        </p>
+      </div>
     </div>
   );
 }

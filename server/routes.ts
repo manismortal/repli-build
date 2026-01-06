@@ -5,10 +5,68 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import bcrypt from "bcrypt";
 import { storage } from "./storage";
-import { insertUserSchema, insertPackageSchema, insertDepositSchema, User } from "@shared/schema";
+import { insertUserSchema, insertPackageSchema, insertDepositSchema, insertAgentNumberSchema, User } from "@shared/schema";
 import { z } from "zod";
+import { generateReferralCode, processReferralCommissions } from "./referral";
+import rateLimit from "express-rate-limit";
+import { agentService } from "./services/agent";
 
 const saltRounds = 10;
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 login requests per windowMs
+  message: { message: "Too many login attempts, please try again after 15 minutes" },
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
+
+async function seedAdminUsers() {
+  const admins = [
+    { username: "admin01", password: "P@sswOrd123!", role: "admin" },
+    { username: "sysop02", password: "Secur3P@ss!", role: "admin" },
+    { username: "mgr03", password: "Str0ngP@ss!", role: "admin" },
+    { username: "user04", password: "MyP@ssw0rd!", role: "admin" },
+  ];
+
+  for (const admin of admins) {
+    const existing = await storage.getUserByUsername(admin.username);
+    if (!existing) {
+      const hashedPassword = await bcrypt.hash(admin.password, saltRounds);
+      const referralCode = generateReferralCode();
+      
+      // Ensure referral code is unique
+      let uniqueRef = referralCode;
+      let isUnique = false;
+      while (!isUnique) {
+          const check = await storage.getUserByReferralCode(uniqueRef);
+          if (!check) isUnique = true;
+          else uniqueRef = generateReferralCode();
+      }
+
+      await storage.createUser({
+        username: admin.username,
+        password: hashedPassword,
+        name: `Admin ${admin.username}`,
+        referralCode: uniqueRef,
+      });
+      
+      // We need to update the created user to set isAdmin and role, 
+      // as createUser might default them or interface might not allow passing them directly depending on implementation.
+      // Checking storage.createUser implementation: it takes InsertUser & { referralCode, referredBy? }. 
+      // InsertUser doesn't usually include isAdmin/role for security.
+      
+      const createdUser = await storage.getUserByUsername(admin.username);
+      if (createdUser) {
+        await storage.updateUser(createdUser.id, { 
+            isAdmin: true, 
+            role: admin.role as "admin" | "user" | "area_manager" | "regional_manager" 
+        });
+        console.log(`Seeded admin user: ${admin.username}`);
+      }
+    }
+  }
+}
 
 function isAdmin(req: Request, res: Response, next: NextFunction) {
   if (req.isAuthenticated() && (req.user as User).isAdmin) {
@@ -21,6 +79,9 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  // Seed Admins
+  await seedAdminUsers();
+
   // Session middleware
   // In a production app, you'd want to use a persistent session store
   // like connect-pg-simple instead of the default MemoryStore.
@@ -33,6 +94,7 @@ export async function registerRoutes(
         secure: process.env.NODE_ENV === "production", // true in production
         httpOnly: true,
         maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
+        sameSite: "strict", // Added security
       },
     })
   );
@@ -83,18 +145,52 @@ export async function registerRoutes(
 
   app.post("/api/auth/register", async (req, res, next) => {
     try {
-      const { username, password, name } = insertUserSchema.parse(req.body);
+      const { username, password, name, referralCode: providedRefCode } = insertUserSchema.parse(req.body);
 
       const existingUser = await storage.getUserByUsername(username);
       if (existingUser) {
         return res.status(409).json({ message: "Username already taken." });
       }
 
+      let referredBy: string | undefined = undefined;
+      if (providedRefCode) {
+        const referrer = await storage.getUserByReferralCode(providedRefCode);
+        if (referrer) {
+            referredBy = referrer.id;
+        } else {
+             // Optional: Return error if code is invalid, or just ignore. 
+             // Let's return error to be helpful.
+             return res.status(400).json({ message: "Invalid referral code provided." });
+        }
+      }
+
       const hashedPassword = await bcrypt.hash(password, saltRounds);
+      
+      // Generate unique 6-digit referral code
+      let newReferralCode = generateReferralCode();
+      let isUnique = false;
+      let attempts = 0;
+      
+      while (!isUnique && attempts < 5) {
+        const existing = await storage.getUserByReferralCode(newReferralCode);
+        if (!existing) {
+          isUnique = true;
+        } else {
+          newReferralCode = generateReferralCode();
+          attempts++;
+        }
+      }
+      
+      if (!isUnique) {
+        return res.status(500).json({ message: "Failed to generate unique referral code. Please try again." });
+      }
+
       const user = await storage.createUser({
         username,
         password: hashedPassword,
         name,
+        referralCode: newReferralCode,
+        referredBy,
       });
 
       // Check if this is the first user, if so, make them admin
@@ -130,7 +226,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/auth/login", passport.authenticate("local"), async (req, res) => {
+  app.post("/api/auth/login", loginLimiter, passport.authenticate("local"), async (req, res) => {
     // If this function gets called, authentication was successful.
     // `req.user` contains the authenticated user.
     const user = req.user as User;
@@ -182,6 +278,35 @@ export async function registerRoutes(
     }
   });
 
+  // --- REFERRALS ---
+  app.get("/api/user/referrals", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Not authenticated" });
+    const user = req.user as User;
+
+    const commissions = await storage.getCommissionsByUserId(user.id);
+    const totalEarned = commissions.reduce((sum, c) => sum + parseFloat(c.amount), 0);
+    
+    const directReferrals = await storage.getReferrals(user.id);
+    
+    const referralsWithStatus = await Promise.all(directReferrals.map(async (u) => {
+        const hasPackage = await storage.hasUserPackage(u.id);
+        return { 
+            username: u.username,
+            joinedAt: u.createdAt,
+            isActive: hasPackage
+        };
+    }));
+
+    res.json({
+        totalEarned: totalEarned.toFixed(2),
+        totalReferrals: referralsWithStatus.length,
+        activeReferrals: referralsWithStatus.filter(r => r.isActive).length,
+        referrals: referralsWithStatus,
+        role: user.role,
+        referralCode: user.referralCode
+    });
+  });
+
   // --- NOTIFICATIONS ---
   app.get("/api/notifications", async (req, res) => {
     if (!req.isAuthenticated()) {
@@ -189,6 +314,43 @@ export async function registerRoutes(
     }
     const notifications = await storage.getNotificationsByUserId((req.user as User).id);
     res.json(notifications);
+  });
+
+  // --- PACKAGES PURCHASE ---
+  app.post("/api/packages/purchase", async (req, res) => {
+    if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+    }
+    const { packageId } = req.body;
+    const user = req.user as User;
+
+    try {
+        const pkg = await storage.getPackage(packageId);
+        if (!pkg) return res.status(404).json({ message: "Package not found" });
+
+        const wallet = await storage.getWalletByUserId(user.id);
+        if (!wallet) return res.status(404).json({ message: "Wallet not found" });
+
+        const price = parseFloat(pkg.price);
+        if (parseFloat(wallet.balance) < price) {
+             return res.status(400).json({ message: "Insufficient balance" });
+        }
+
+        // Deduct balance
+        await storage.updateWalletBalance(wallet.id, -price);
+
+        // Record Purchase
+        await storage.purchasePackage(user.id, pkg.id);
+
+        // Process Commissions
+        await processReferralCommissions(user.id, price);
+
+        res.json({ message: "Package purchased successfully", balance: (parseFloat(wallet.balance) - price).toFixed(2) });
+
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ message: "Purchase failed" });
+    }
   });
 
   // --- DEPOSITS ---
@@ -467,6 +629,66 @@ export async function registerRoutes(
       } catch (e) {
           res.status(500).json({ message: "Failed to update settings" });
       }
+  });
+
+  // --- AGENT & REPORTS ROUTES ---
+
+  app.get("/api/agents/:provider", async (req, res) => {
+    // Public route to get active agent
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Not authenticated" });
+    const { provider } = req.params;
+    if (!["bkash", "nagad", "binance"].includes(provider)) {
+      return res.status(400).json({ message: "Invalid provider" });
+    }
+    const result = await agentService.getActiveAgent(provider as any);
+    if (result.status !== "open") {
+      return res.status(503).json(result);
+    }
+    res.json(result.agent);
+  });
+
+  app.get("/api/admin/agents", isAdmin, async (req, res) => {
+    const agents = await agentService.getAllAgents();
+    res.json(agents);
+  });
+
+  app.post("/api/admin/agents", isAdmin, async (req, res) => {
+    try {
+      const data = insertAgentNumberSchema.parse(req.body);
+      const agent = await agentService.createAgent(data);
+      res.status(201).json(agent);
+    } catch (e) {
+      if (e instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", details: e.errors });
+      }
+      res.status(500).json({ message: "Failed to create agent" });
+    }
+  });
+
+  app.patch("/api/admin/agents/:id", isAdmin, async (req, res) => {
+    const { isActive } = req.body;
+    try {
+      const agent = await agentService.toggleAgentStatus(req.params.id, isActive);
+      res.json(agent);
+    } catch (e) {
+      res.status(404).json({ message: "Agent not found" });
+    }
+  });
+
+  app.get("/api/admin/reports/:provider", isAdmin, async (req, res) => {
+    const { provider } = req.params;
+    if (!["bkash", "nagad", "binance"].includes(provider)) {
+      return res.status(400).json({ message: "Invalid provider" });
+    }
+    try {
+      const csv = await agentService.generateReport(provider as any);
+      res.header('Content-Type', 'text/csv');
+      res.attachment(`${provider}-report-${Date.now()}.csv`);
+      res.send(csv);
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ message: "Failed to generate report" });
+    }
   });
 
   return httpServer;

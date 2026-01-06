@@ -8,7 +8,11 @@ export default function WalletPage() {
   const { user, language } = useAuth();
   
   const balance = Number(user?.balance || 0);
-  const lockedBalance = Number((user as any)?.bonusBalance || 0);
+  const bonusBalance = Number(user?.bonusBalance || 0);
+  // Assuming 'lockedBalance' logic might differ or just be bonus balance for now based on context
+  // The original code used bonusBalance for one card and lockedBalance (also mapped to bonusBalance) for another.
+  // I'll keep the logic but use the correct properties.
+  const lockedFunds = bonusBalance; 
 
   const t = {
     finance: language === "bn" ? "ফাইন্যান্স" : "Finance",
@@ -42,7 +46,7 @@ export default function WalletPage() {
           </div>
           
           <div className="grid grid-cols-2 gap-4 mt-8">
-            <Link href="/payment/bkash" className="w-full">
+            <Link href="/payment/methods" className="w-full">
               <Button className="w-full h-12 rounded-xl font-heading shadow-lg shadow-primary/20">
                 <ArrowDownLeft className="h-4 w-4 mr-2" />
                 {t.deposit}
@@ -65,7 +69,7 @@ export default function WalletPage() {
               <Banknote className="h-4 w-4" />
             </div>
             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">{t.welcome}</p>
-            <p className="text-2xl font-bold font-heading">৳{(user as any)?.bonusBalance || "0"}</p>
+            <p className="text-2xl font-bold font-heading">৳{bonusBalance.toLocaleString()}</p>
             <p className="text-[10px] text-accent font-medium mt-1">{t.lockedSub}</p>
           </CardContent>
         </Card>
@@ -75,7 +79,7 @@ export default function WalletPage() {
               <History className="h-4 w-4" />
             </div>
             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">{t.locked}</p>
-            <p className="text-2xl font-bold font-heading">৳{lockedBalance.toLocaleString()}</p>
+            <p className="text-2xl font-bold font-heading">৳{lockedFunds.toLocaleString()}</p>
             <p className="text-[10px] text-green-600 font-medium mt-1">{t.cycle}</p>
           </CardContent>
         </Card>

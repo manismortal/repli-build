@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Ship } from "lucide-react";
 
-import shipImage from "@assets/generated_images/maersk_shipping_container_vessel_at_sea.png";
+const shipImage = "/maersk_shipping_container_vessel_at_sea.png";
 
 export default function AuthPage() {
   const { login, register, user, isLoading } = useAuth();
@@ -32,8 +32,9 @@ export default function AuthPage() {
     const mobile = formData.get("mobile") as string;
     const password = formData.get("password") as string;
     const name = formData.get("name") as string;
+    const referralCode = formData.get("referral") as string;
     
-    register(mobile, password, name);
+    register(mobile, password, name, referralCode);
   };
 
   return (

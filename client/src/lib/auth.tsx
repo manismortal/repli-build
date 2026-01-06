@@ -5,10 +5,19 @@ import type { User, InsertUser } from "@shared/schema";
 import { useLocation } from "wouter";
 
 // =================================================================
+// Types
+// =================================================================
+export type APIUser = User & {
+  balance: string;
+  bonusBalance: string;
+  hasPackage: boolean;
+};
+
+// =================================================================
 // API Fetcher Functions
 // =================================================================
 
-async function fetchMe(): Promise<User> {
+async function fetchMe(): Promise<APIUser> {
   const res = await fetch("/api/auth/me");
   if (!res.ok) {
     if (res.status === 401) {
@@ -19,7 +28,7 @@ async function fetchMe(): Promise<User> {
   return res.json();
 }
 
-async function loginUser(credentials: Omit<InsertUser, "password"> & { password: InsertUser["password"] }): Promise<User> {
+async function loginUser(credentials: Omit<InsertUser, "password"> & { password: InsertUser["password"] }): Promise<APIUser> {
   const res = await fetch("/api/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -32,7 +41,7 @@ async function loginUser(credentials: Omit<InsertUser, "password"> & { password:
   return res.json();
 }
 
-async function registerUser(credentials: InsertUser): Promise<User> {
+async function registerUser(credentials: InsertUser & { referralCode?: string }): Promise<APIUser> {
   const res = await fetch("/api/auth/register", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -62,13 +71,14 @@ async function logoutUser(): Promise<{ message: string }> {
 // =================================================================
 
 type AuthContextType = {
-  user: User | null | undefined;
+  user: APIUser | null | undefined;
   login: (username: string, password: string) => void;
-  register: (username: string, password: string, name?: string) => void;
+  register: (username: string, password: string, name?: string, referralCode?: string) => void;
   logout: () => void;
   isLoading: boolean;
   language: "en" | "bn";
   setLanguage: (lang: "en" | "bn") => void;
+  updateBalance: (amount: number) => void; // Added for Products page compat
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -80,7 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState<"en" | "bn">("bn");
 
   // Query to get the current user
-  const { data: user, isLoading, isError } = useQuery<User, Error>({
+  const { data: user, isLoading, isError } = useQuery<APIUser, Error>({
     queryKey: ["user", "me"],
     queryFn: fetchMe,
     retry: (failureCount, error) => {
@@ -128,14 +138,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  // Mock update balance for now (Products page uses it, but we are moving to backend)
+  // We keep it to avoid breaking types until refactor
+  const updateBalance = (amount: number) => {
+      // Intentionally empty or optimistic update
+      console.log("updateBalance called with", amount);
+  }
+
   const authContextValue: AuthContextType = {
     user: isError ? null : user,
     login: (username, password) => loginMutation.mutate({ username, password }),
-    register: (username, password, name) => registerMutation.mutate({ username, password, name }),
+    register: (username, password, name, referralCode) => registerMutation.mutate({ username, password, name, referralCode }),
     logout: () => logoutMutation.mutate(),
     isLoading: isLoading || loginMutation.isPending || registerMutation.isPending,
     language,
-    setLanguage
+    setLanguage,
+    updateBalance
   };
 
   return (

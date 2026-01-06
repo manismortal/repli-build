@@ -20,7 +20,11 @@ export default function Notifications() {
   const t = {
     title: language === "bn" ? "বিজ্ঞপ্তি" : "Notifications",
     empty: language === "bn" ? "কোনো নতুন বিজ্ঞপ্তি নেই" : "No new notifications",
-    sub: language === "bn" ? "আপনার অ্যাকাউন্টের আপডেট এখানে দেখুন" : "View your account updates here"
+    sub: language === "bn" ? "আপনার অ্যাকাউন্টের আপডেট এখানে দেখুন" : "View your account updates here",
+    loading: language === "bn" ? "লোড হচ্ছে..." : "Loading...",
+    notif: language === "bn" ? "বিজ্ঞপ্তি" : "Notification",
+    viewAll: language === "bn" ? "সব আপডেট দেখুন" : "View all updates",
+    ensure: language === "bn" ? "আপনার অ্যাকাউন্টের নিরাপত্তা নিশ্চিত করুন" : "Ensure your account security",
   };
 
   return (
@@ -32,7 +36,7 @@ export default function Notifications() {
 
       <div className="space-y-3">
         {isLoading ? (
-          <p className="text-center text-muted-foreground">Loading...</p>
+          <p className="text-center text-muted-foreground">{t.loading}</p>
         ) : notifications?.length === 0 ? (
           <div className="text-center py-10">
             <Bell className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
@@ -47,7 +51,7 @@ export default function Notifications() {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-1">
-                    <p className="font-bold tracking-tight">Notification</p>
+                    <p className="font-bold tracking-tight">{t.notif}</p>
                     <span className="text-[10px] text-muted-foreground uppercase font-bold">
                       {formatDistanceToNow(new Date(notif.createdAt), { addSuffix: true })}
                     </span>
@@ -64,8 +68,8 @@ export default function Notifications() {
         <div className="h-12 w-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto text-primary">
           <Info className="h-6 w-6" />
         </div>
-        <p className="text-sm font-bold text-primary">{language === "bn" ? "সব আপডেট দেখুন" : "View all updates"}</p>
-        <p className="text-xs text-muted-foreground">{language === "bn" ? "আপনার অ্যাকাউন্টের নিরাপত্তা নিশ্চিত করুন" : "Ensure your account security"}</p>
+        <p className="text-sm font-bold text-primary">{t.viewAll}</p>
+        <p className="text-xs text-muted-foreground">{t.ensure}</p>
       </div>
     </div>
   );

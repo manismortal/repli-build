@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#E2136E"/>
+  <!-- bKash Bird Icon (White, Centered) -->
+  <path fill="white" d="M140 320 L240 320 L240 240 L380 340 L220 440 L220 360 L140 360 Z" transform="translate(0, -50)"/>
+  <path fill="white" d="M300 220 L240 180 L240 260 Z" transform="translate(20, -20)"/>
+  <!-- Adjusted "Origami Bird" approximation -->
+  <path fill="white" d="M156 256 L256 180 L256 256 L356 256 L256 332 L256 256 L156 256 Z" opacity="0.9"/>
+</svg>

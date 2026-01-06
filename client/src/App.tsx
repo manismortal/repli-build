@@ -12,8 +12,10 @@ import Products from "@/pages/products";
 import Tasks from "@/pages/tasks";
 import Wallet from "@/pages/wallet";
 import Team from "@/pages/team";
-import Lottery from "@/pages/lottery";
 import BkashPayment from "@/pages/bkash-payment";
+import NagadPayment from "@/pages/nagad-payment";
+import BinancePayment from "@/pages/binance-payment";
+import PaymentMethods from "@/pages/payment-methods";
 import Settings from "@/pages/settings";
 import Profile from "@/pages/profile";
 import Notifications from "@/pages/notifications";
@@ -28,6 +30,10 @@ import AdminUsers from "@/pages/admin/users";
 import AdminWithdrawals from "@/pages/admin/withdrawals";
 import AdminPackages from "@/pages/admin/packages";
 import AdminDeposits from "@/pages/admin/deposits";
+import AdminSettings from "@/pages/admin/settings";
+import AdminNotifications from "@/pages/admin/notifications";
+import AdminAgents from "@/pages/admin/agents";
+import AdminReports from "@/pages/admin/reports";
 
 function Router() {
   const { user } = useAuth();
@@ -57,6 +63,10 @@ function Router() {
                 <Route path="/admin/deposits" component={AdminDeposits} />
                 <Route path="/admin/withdrawals" component={AdminWithdrawals} />
                 <Route path="/admin/packages" component={AdminPackages} />
+                <Route path="/admin/notifications" component={AdminNotifications} />
+                <Route path="/admin/settings" component={AdminSettings} />
+                <Route path="/admin/agents" component={AdminAgents} />
+                <Route path="/admin/reports" component={AdminReports} />
                 <Route component={NotFound} />
               </Switch>
             </AdminLayout>
@@ -65,7 +75,10 @@ function Router() {
       </Route>
 
       {/* User Routes */}
+      <Route path="/payment/methods" component={PaymentMethods} />
       <Route path="/payment/bkash" component={BkashPayment} />
+      <Route path="/payment/nagad" component={NagadPayment} />
+      <Route path="/payment/binance" component={BinancePayment} />
       <Route path="/withdraw" component={Withdraw} />
       <Route path="/support" component={Support} />
       <Route>
@@ -79,7 +92,6 @@ function Router() {
             <Route path="/tasks" component={Tasks} />
             <Route path="/wallet" component={Wallet} />
             <Route path="/team" component={Team} />
-            <Route path="/lottery" component={Lottery} />
             <Route path="/settings" component={Settings} />
             <Route path="/profile" component={Profile} />
             <Route path="/notifications" component={Notifications} />

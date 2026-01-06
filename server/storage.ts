@@ -17,9 +17,13 @@ import {
   deposits,
   siteSettings,
   type SiteSettings,
+  type ReferralSettings,
+  type Commission,
+  referralSettings,
+  commissions,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
 // =================================================================
@@ -29,9 +33,11 @@ export interface IStorage {
   // Users
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  getUserByReferralCode(code: string): Promise<User | undefined>;
+  createUser(user: InsertUser & { referralCode: string, referredBy?: string }): Promise<User>;
   getAllUsers(): Promise<User[]>;
   updateUser(id: string, updates: Partial<User>): Promise<User>;
+  getReferrals(userId: string): Promise<User[]>;
 
   // Wallets
   getWalletByUserId(userId: string): Promise<Wallet | undefined>;
@@ -68,6 +74,12 @@ export interface IStorage {
   // Site Settings
   getSiteSettings(): Promise<SiteSettings | undefined>;
   updateSiteSettings(settings: Partial<SiteSettings>): Promise<SiteSettings>;
+
+  // Referral System
+  getReferralSettings(): Promise<ReferralSettings | undefined>;
+  updateReferralSettings(settings: Partial<ReferralSettings>): Promise<ReferralSettings>;
+  addCommission(userId: string, sourceUserId: string, amount: number, type: string): Promise<Commission>;
+  getCommissionsByUserId(userId: string): Promise<Commission[]>;
 }
 
 // =================================================================
@@ -82,6 +94,8 @@ export class MemStorage implements IStorage {
   private deposits: Map<string, Deposit> = new Map();
   private notifications: Map<string, Notification> = new Map();
   private settings: SiteSettings | undefined;
+  private referralSettings: ReferralSettings | undefined;
+  private commissions: Map<string, Commission> = new Map();
 
   // =================================
   // User Methods
@@ -96,7 +110,13 @@ export class MemStorage implements IStorage {
     );
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
+  async getUserByReferralCode(code: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.referralCode === code,
+    );
+  }
+
+  async createUser(insertUser: InsertUser & { referralCode: string, referredBy?: string }): Promise<User> {
     const id = randomUUID();
     const now = new Date();
     const user: User = {
@@ -105,6 +125,10 @@ export class MemStorage implements IStorage {
       password: insertUser.password, // IMPORTANT: In a real app, hash this password!
       name: insertUser.name || null,
       isAdmin: false,
+      role: 'user',
+      referralCode: insertUser.referralCode,
+      referredBy: insertUser.referredBy || null,
+      walletNumber: insertUser.walletNumber || null,
       createdAt: now,
     };
     this.users.set(id, user);
@@ -125,6 +149,10 @@ export class MemStorage implements IStorage {
     const updatedUser = { ...user, ...updates };
     this.users.set(id, updatedUser);
     return updatedUser;
+  }
+
+  async getReferrals(userId: string): Promise<User[]> {
+      return Array.from(this.users.values()).filter(u => u.referredBy === userId);
   }
 
   // =================================
@@ -178,6 +206,7 @@ export class MemStorage implements IStorage {
     const newPackage: Package = {
       id,
       ...pkg,
+      description: pkg.description || null,
       price: pkg.price!,
       createdAt: now,
     };
@@ -365,6 +394,73 @@ export class MemStorage implements IStorage {
     }
     return this.settings;
   }
+
+  // =================================
+  // Referral Methods
+  // =================================
+  async getReferralSettings(): Promise<ReferralSettings | undefined> {
+    if (!this.referralSettings) {
+        // Return default settings for MemStorage if not set
+        return {
+            id: "default",
+            level1Percent: "5.00",
+            level2Percent: "3.00",
+            level3Percent: "2.00",
+            level4Percent: "1.00",
+            level5Percent: "0.50",
+            areaManagerPercent: "2.00",
+            regionalManagerPercent: "3.00",
+            updatedAt: new Date()
+        };
+    }
+    return this.referralSettings;
+  }
+
+  async updateReferralSettings(settings: Partial<ReferralSettings>): Promise<ReferralSettings> {
+      if (!this.referralSettings) {
+           this.referralSettings = {
+            id: "default",
+            level1Percent: "5.00",
+            level2Percent: "3.00",
+            level3Percent: "2.00",
+            level4Percent: "1.00",
+            level5Percent: "0.50",
+            areaManagerPercent: "2.00",
+            regionalManagerPercent: "3.00",
+            updatedAt: new Date(),
+             ...settings
+        };
+      } else {
+          this.referralSettings = { ...this.referralSettings, ...settings, updatedAt: new Date() };
+      }
+      return this.referralSettings;
+  }
+
+  async addCommission(userId: string, sourceUserId: string, amount: number, type: string): Promise<Commission> {
+      const id = randomUUID();
+      const commission: Commission = {
+          id,
+          beneficiaryId: userId,
+          sourceUserId,
+          amount: String(amount),
+          type,
+          description: null,
+          createdAt: new Date()
+      };
+      this.commissions.set(id, commission);
+
+      // Add to Wallet
+      const wallet = await this.getWalletByUserId(userId);
+      if (wallet) {
+          await this.updateWalletBalance(wallet.id, amount);
+      }
+      
+      return commission;
+  }
+
+  async getCommissionsByUserId(userId: string): Promise<Commission[]> {
+      return Array.from(this.commissions.values()).filter(c => c.beneficiaryId === userId);
+  }
 }
 
 // =================================================================
@@ -382,7 +478,12 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
+  async getUserByReferralCode(code: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.referralCode, code));
+    return user;
+  }
+
+  async createUser(insertUser: InsertUser & { referralCode: string, referredBy?: string }): Promise<User> {
     const [user] = await db.insert(users).values(insertUser).returning();
     // Create wallet
     await db.insert(wallets).values({ userId: user.id });
@@ -400,6 +501,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, id))
       .returning();
     return updatedUser;
+  }
+
+  async getReferrals(userId: string): Promise<User[]> {
+      return await db.select().from(users).where(eq(users.referredBy, userId));
   }
 
   // Wallets
@@ -565,6 +670,46 @@ export class DatabaseStorage implements IStorage {
         }).returning();
         return created;
     }
+  }
+
+  // =================================
+  // Referral Methods
+  // =================================
+  async getReferralSettings(): Promise<ReferralSettings | undefined> {
+      const [settings] = await db.select().from(referralSettings).limit(1);
+      return settings;
+  }
+
+  async updateReferralSettings(settings: Partial<ReferralSettings>): Promise<ReferralSettings> {
+      const [existing] = await db.select().from(referralSettings).limit(1);
+      if (existing) {
+          const [updated] = await db.update(referralSettings).set({ ...settings, updatedAt: new Date() }).where(eq(referralSettings.id, existing.id)).returning();
+          return updated;
+      } else {
+          const [created] = await db.insert(referralSettings).values(settings as any).returning();
+          return created;
+      }
+  }
+
+  async addCommission(userId: string, sourceUserId: string, amount: number, type: string): Promise<Commission> {
+      const [commission] = await db.insert(commissions).values({
+          beneficiaryId: userId,
+          sourceUserId,
+          amount: String(amount),
+          type,
+      }).returning();
+
+      // Add to Wallet
+      const wallet = await this.getWalletByUserId(userId);
+      if (wallet) {
+          await this.updateWalletBalance(wallet.id, amount);
+      }
+
+      return commission;
+  }
+
+  async getCommissionsByUserId(userId: string): Promise<Commission[]> {
+      return await db.select().from(commissions).where(eq(commissions.beneficiaryId, userId)).orderBy(desc(commissions.createdAt));
   }
 }
 

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#FCD535"/>
+  <!-- Binance Icon (Black) -->
+  <path fill="#1E2329" d="M256 168.39a80.11 80.11 0 1 0 80.11 80.11A80.11 80.11 0 0 0 256 168.39zm0 147a66.78 66.78 0 1 1 66.78-66.78A66.78 66.78 0 0 1 256 315.39z" transform="scale(2) translate(-128 -128)"/>
+  <path fill="#1E2329" d="M256 94a64 64 0 0 1 64 64h-30a34 34 0 0 0-34-34V94z"/>
+  <path fill="#1E2329" d="M256 418a64 64 0 0 1-64-64h30a34 34 0 0 0 34 34v30z"/>
+  <path fill="#1E2329" d="M94 256a64 64 0 0 1 64-64v30a34 34 0 0 0-34 34H94z"/>
+  <path fill="#1E2329" d="M418 256a64 64 0 0 1-64 64v-30a34 34 0 0 0 34-34h30z"/>
+  
+  <!-- Central Diamond Shape Refinement -->
+  <rect x="226" y="226" width="60" height="60" transform="rotate(45 256 256)" fill="#1E2329"/>
+</svg>

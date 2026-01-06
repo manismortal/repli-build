@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useQuery } from "@tanstack/react-query";
 
-export default function BkashPayment() {
+export default function NagadPayment() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { language } = useAuth();
@@ -24,9 +24,9 @@ export default function BkashPayment() {
   const [showNumber, setShowNumber] = useState(false);
   const [countdown, setCountdown] = useState(60);
 
-  // Fetch Active Agent
-  const { data: agentData, isLoading: agentLoading, error: agentError } = useQuery({
-    queryKey: ["/api/agents/bkash"],
+   // Fetch Active Agent
+   const { data: agentData, isLoading: agentLoading, error: agentError } = useQuery({
+    queryKey: ["/api/agents/nagad"],
   });
 
   const isClosed = agentError && (agentError as any).status === 503;
@@ -80,12 +80,12 @@ export default function BkashPayment() {
     }
 
     if (!userPhone || userPhone.length !== 11) {
-      toast({ 
-          title: language === "bn" ? "অবৈধ ফোন নম্বর" : "Invalid Phone Number", 
-          description: language === "bn" ? "অনুগ্রহ করে আপনার বিকাশ নম্বরটি দিন (১১ ডিজিট)" : "Please enter your bKash number (11 digits)", 
-          variant: "destructive" 
-      });
-      return;
+        toast({ 
+            title: language === "bn" ? "অবৈধ ফোন নম্বর" : "Invalid Phone Number", 
+            description: language === "bn" ? "অনুগ্রহ করে আপনার নগদ নম্বরটি দিন (১১ ডিজিট)" : "Please enter your Nagad number (11 digits)", 
+            variant: "destructive" 
+        });
+        return;
     }
     
     setIsSubmitting(true);
@@ -95,7 +95,7 @@ export default function BkashPayment() {
         transactionId: trxId,
         userPhoneNumber: userPhone,
         agentNumber: agentData?.number,
-        method: "bkash"
+        method: "nagad" 
       });
 
       setShowSuccess(true);
@@ -112,7 +112,7 @@ export default function BkashPayment() {
 
   const t = {
     title: language === "bn" ? "ডিপোজিট" : "Deposit",
-    subtitle: language === "bn" ? "বিকাশ এজেন্ট" : "bKash Agent",
+    subtitle: language === "bn" ? "নগদ এজেন্ট" : "Nagad Agent",
     successTitle: language === "bn" ? "অনুরোধ জমা দেওয়া হয়েছে" : "Request Submitted",
     successMsg: language === "bn" ? "আপনার ব্যালেন্স শীঘ্রই যুক্ত হবে। আমাদের সাথে থাকার জন্য ধন্যবাদ।" : "Your balance will be credited soon. Please stay with us and trust us.",
     verifyMsg: language === "bn" ? "আমরা নিরাপত্তার জন্য প্রতিটি লেনদেন ম্যানুয়ালি যাচাই করি।" : "We verify every transaction manually to ensure security.",
@@ -125,8 +125,8 @@ export default function BkashPayment() {
     selectAmount: language === "bn" ? "পরিমাণ নির্বাচন করুন" : "Select Amount",
     custom: language === "bn" ? "অন্যান্য" : "Custom",
     trxIdLabel: language === "bn" ? "ট্রানজেকশন আইডি (TrxID)" : "Transaction ID (TrxID)",
-    trxIdHelp: language === "bn" ? "বিকাশে টাকা পাঠানোর পর যে অনন্য ট্রানজেকশন আইডি পেয়েছেন তা দিন।" : "Enter the unique Transaction ID you received from bKash after sending money.",
-    userPhoneLabel: language === "bn" ? "আপনার বিকাশ নম্বর" : "Your bKash Number",
+    trxIdHelp: language === "bn" ? "নগদে টাকা পাঠানোর পর যে অনন্য ট্রানজেকশন আইডি পেয়েছেন তা দিন।" : "Enter the unique Transaction ID you received from Nagad after sending money.",
+    userPhoneLabel: language === "bn" ? "আপনার নগদ নম্বর" : "Your Nagad Number",
     userPhoneHelp: language === "bn" ? "যে নম্বর থেকে টাকা পাঠিয়েছেন" : "Number used to send money",
     proceed: language === "bn" ? "এগিয়ে যান" : "PROCEED",
     processing: language === "bn" ? "প্রক্রিয়াধীন..." : "PROCESSING...",
@@ -149,7 +149,7 @@ export default function BkashPayment() {
         <div className="flex flex-col gap-3 w-full max-w-xs">
             <Link href="/dashboard">
                 <Button 
-                className="bg-[#e2136e] hover:bg-[#c0105d] text-white w-full h-12 rounded-full font-bold shadow-md"
+                className="bg-[#ec1c24] hover:bg-[#c0101b] text-white w-full h-12 rounded-full font-bold shadow-md"
                 >
                 {t.backHome}
                 </Button>
@@ -168,7 +168,7 @@ export default function BkashPayment() {
   if (isClosed) {
     return (
         <div className="min-h-screen bg-[#f8fafc] flex flex-col font-sans">
-             <header className="bg-[#e2136e] text-white p-4 flex items-center justify-between sticky top-0 z-50 shadow-md">
+                <header className="bg-[#ec1c24] text-white p-4 flex items-center justify-between sticky top-0 z-50 shadow-md">
                 <div className="flex items-center gap-3">
                 <button onClick={() => setLocation("/payment/methods")} className="p-1 hover:bg-white/10 rounded-full transition-colors">
                     <ChevronLeft className="h-6 w-6" />
@@ -180,7 +180,7 @@ export default function BkashPayment() {
                 </div>
             </header>
             <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-                <AlertCircle className="h-16 w-16 text-[#e2136e]/50 mb-4" />
+                <AlertCircle className="h-16 w-16 text-[#ec1c24]/50 mb-4" />
                 <h3 className="text-xl font-bold text-slate-800 mb-2">Service Unavailable</h3>
                 <p className="text-slate-500">{t.closed}</p>
             </div>
@@ -191,9 +191,9 @@ export default function BkashPayment() {
   return (
     <div className="min-h-screen bg-[#f8fafc] flex flex-col font-sans">
       {/* Header */}
-      <header className="bg-[#e2136e] text-white p-4 flex items-center justify-between sticky top-0 z-50 shadow-md">
+      <header className="bg-[#ec1c24] text-white p-4 flex items-center justify-between sticky top-0 z-50 shadow-md">
         <div className="flex items-center gap-3">
-          <button onClick={() => setLocation("/wallet")} className="p-1 hover:bg-white/10 rounded-full transition-colors">
+          <button onClick={() => setLocation("/payment/methods")} className="p-1 hover:bg-white/10 rounded-full transition-colors">
             <ChevronLeft className="h-6 w-6" />
           </button>
           <div className="flex flex-col">
@@ -214,7 +214,7 @@ export default function BkashPayment() {
         {/* Agent Number Section */}
         <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
             <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 bg-[#e2136e]/10 rounded-full flex items-center justify-center text-[#e2136e]">
+                <div className="w-10 h-10 bg-[#ec1c24]/10 rounded-full flex items-center justify-center text-[#ec1c24]">
                     <Smartphone className="h-5 w-5" />
                 </div>
                 <div>
@@ -225,14 +225,14 @@ export default function BkashPayment() {
             
             <div className="bg-slate-50 border border-dashed border-slate-300 rounded-xl p-3 flex items-center justify-between">
                 {agentLoading ? (
-                     <span className="text-sm font-bold text-slate-400 w-full text-left animate-pulse">Loading agent...</span>
+                    <span className="text-sm font-bold text-slate-400 w-full text-left animate-pulse">Loading agent...</span>
                 ) : !showNumber ? (
                     <button 
                         onClick={handleNumberClick}
-                        className="text-sm font-bold text-[#e2136e] w-full text-left"
+                        className="text-sm font-bold text-[#ec1c24] w-full text-left"
                         disabled={!agentData}
                     >
-                        {agentData ? t.viewNumber : t.unavailable}
+                         {agentData ? t.viewNumber : t.unavailable}
                     </button>
                 ) : (
                     <div className="flex flex-col">
@@ -246,7 +246,7 @@ export default function BkashPayment() {
                         size="sm" 
                         variant="ghost" 
                         onClick={handleCopy}
-                        className="text-[#e2136e] hover:bg-[#e2136e]/10 h-8 w-8 p-0 rounded-full"
+                        className="text-[#ec1c24] hover:bg-[#ec1c24]/10 h-8 w-8 p-0 rounded-full"
                     >
                         <Copy className="h-4 w-4" />
                     </Button>
@@ -264,8 +264,8 @@ export default function BkashPayment() {
                         onClick={() => setAmount(val.toString())}
                         className={`py-3 rounded-xl text-sm font-bold border transition-all duration-200 ${
                             amount === val.toString() 
-                            ? 'bg-[#e2136e] text-white border-[#e2136e] shadow-md shadow-[#e2136e]/20' 
-                            : 'bg-white text-slate-600 border-slate-200 hover:border-[#e2136e]/50'
+                            ? 'bg-[#ec1c24] text-white border-[#ec1c24] shadow-md shadow-[#ec1c24]/20' 
+                            : 'bg-white text-slate-600 border-slate-200 hover:border-[#ec1c24]/50'
                         }`}
                     >
                         ৳{val}
@@ -279,7 +279,7 @@ export default function BkashPayment() {
                         onChange={(e) => setAmount(e.target.value)}
                         className={`w-full h-full rounded-xl text-sm font-bold text-center border focus:outline-none transition-all ${
                             ![250, 500, 1500, 2000, 5000].includes(Number(amount)) && amount
-                            ? 'border-[#e2136e] bg-[#e2136e]/5 text-[#e2136e]'
+                            ? 'border-[#ec1c24] bg-[#ec1c24]/5 text-[#ec1c24]'
                             : 'border-slate-200 bg-white'
                         }`}
                     />
@@ -288,7 +288,7 @@ export default function BkashPayment() {
         </div>
 
         {/* User Phone Number Input */}
-        <div className="space-y-3">
+         <div className="space-y-3">
              <label className="text-sm font-bold text-slate-700 ml-1">{t.userPhoneLabel}</label>
              <div className="relative">
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
@@ -298,13 +298,14 @@ export default function BkashPayment() {
                     value={userPhone}
                     onChange={(e) => setUserPhone(e.target.value)}
                     placeholder="01XXXXXXXXX"
-                    className="h-14 pl-10 text-lg border-slate-200 focus-visible:ring-[#e2136e] rounded-xl bg-white font-mono"
+                    className="h-14 pl-10 text-lg border-slate-200 focus-visible:ring-[#ec1c24] rounded-xl bg-white font-mono"
                 />
              </div>
              <p className="text-[11px] text-slate-400 px-1">
                 {t.userPhoneHelp}
              </p>
         </div>
+
 
         {/* Transaction ID Input */}
         <div className="space-y-3">
@@ -316,8 +317,8 @@ export default function BkashPayment() {
                 <Input 
                     value={trxId}
                     onChange={(e) => setTrxId(e.target.value)}
-                    placeholder="e.g. 9H7G6F5D"
-                    className="h-14 pl-10 text-lg border-slate-200 focus-visible:ring-[#e2136e] rounded-xl bg-white uppercase font-mono placeholder:normal-case"
+                    placeholder="e.g. 7G6F5D4S"
+                    className="h-14 pl-10 text-lg border-slate-200 focus-visible:ring-[#ec1c24] rounded-xl bg-white uppercase font-mono placeholder:normal-case"
                 />
              </div>
              <p className="text-[11px] text-slate-400 px-1">
@@ -330,7 +331,7 @@ export default function BkashPayment() {
             <Button 
                 onClick={handleProceed}
                 disabled={isSubmitting || !agentData}
-                className="w-full h-14 bg-[#e2136e] hover:bg-[#c0105d] text-white rounded-xl font-bold text-lg shadow-lg shadow-[#e2136e]/20 transition-all active:scale-[0.98]"
+                className="w-full h-14 bg-[#ec1c24] hover:bg-[#c0101b] text-white rounded-xl font-bold text-lg shadow-lg shadow-[#ec1c24]/20 transition-all active:scale-[0.98]"
             >
                 {isSubmitting ? t.processing : t.proceed}
             </Button>

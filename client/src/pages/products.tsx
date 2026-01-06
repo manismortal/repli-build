@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Package, DollarSign, Clock, Users, Zap, Calendar, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
+import { useQueryClient } from "@tanstack/react-query";
 
 const PACKAGES = [
   {
@@ -76,26 +77,46 @@ const PACKAGES = [
 ];
 
 export default function Products({ hideHeader = false }: { hideHeader?: boolean }) {
-  const { user, updateBalance, language } = useAuth();
+  const { user, language } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const availableSeats = (pkg: any) => pkg.seatsTotal - pkg.seatsFilled;
 
-  const handleInvest = (pkg: any) => {
+  const handleInvest = async (pkg: any) => {
     if (!user) return;
-    if (user.balance < pkg.price) {
-      toast({ 
-        title: language === "bn" ? "পর্যাপ্ত ব্যালেন্স নেই" : "Insufficient Balance", 
-        description: language === "bn" ? `আপনার এই প্যাকেজে বিনিয়োগ করতে ৳${pkg.price} প্রয়োজন।` : `You need ৳${pkg.price} to invest in this package.`,
-        variant: "destructive"
-      });
-      return;
-    }
     
-    updateBalance(-pkg.price);
-    toast({ 
-      title: language === "bn" ? "বিনিয়োগ সফল হয়েছে" : "Investment Successful", 
-      description: language === "bn" ? `আপনি সফলভাবে ${pkg.nameBn} এ বিনিয়োগ করেছেন।` : `You have successfully invested in ${pkg.name}.` 
-    });
+    try {
+        const res = await fetch("/api/packages/purchase", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ packageId: String(pkg.id) }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            toast({ 
+                title: language === "bn" ? "বিনিয়োগ ব্যর্থ হয়েছে" : "Investment Failed", 
+                description: data.message,
+                variant: "destructive"
+            });
+            return;
+        }
+
+        queryClient.invalidateQueries({ queryKey: ["user", "me"] });
+
+        toast({ 
+            title: language === "bn" ? "বিনিয়োগ সফল হয়েছে" : "Investment Successful", 
+            description: language === "bn" ? `আপনি সফলভাবে ${pkg.nameBn} এ বিনিয়োগ করেছেন।` : `You have successfully invested in ${pkg.name}.` 
+        });
+
+    } catch (e) {
+         toast({ 
+            title: language === "bn" ? "ত্রুটি" : "Error", 
+            description: language === "bn" ? "কিছু ভুল হয়েছে" : "Something went wrong",
+            variant: "destructive"
+        });
+    }
   };
 
   const t = {
