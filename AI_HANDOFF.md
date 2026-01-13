@@ -156,3 +156,37 @@ This is a full-stack investment platform web application designed for mobile use
 *   **Real-time Notifications:** Integrate WebSockets (Socket.io) for instant notification delivery without page refresh.
 *   **Enhanced IDOR Checks:** Perform deeper security audits on withdrawal ID access patterns.
 *   **Unit Testing:** Expand coverage for the new `NotificationService` and withdrawal fee calculators.
+
+## 13. Updates (Jan 13, 2026) - User Onboarding, UX Polish & Deployment Readiness
+
+### **A. User Onboarding Flow**
+*   **Welcome System (`client/src/components/welcome-flow.tsx`):**
+    *   **Lucrative Popup:** A new, animated welcome modal congratulates users on registration with a **250 BDT** bonus confirmation.
+    *   **Tutorial Mode:** After claiming the bonus, a second modal provides a quick visual guide on "How to Deposit" and "How to Complete Tasks".
+    *   **Persistence:** Added `hasSeenWelcome` boolean flag to the database to ensure this flow appears **only once** per user lifetime.
+*   **Special Event Popups (`client/src/components/event-popups.tsx`):**
+    *   Implemented a unified popup system for major events: **Deposit Approval**, **Withdrawal Approval**, and **Referral Bonus**.
+    *   These popups trigger automatically when the corresponding notification type is received.
+
+### **B. Authentication & Registration Fixes**
+*   **Simplified Registration:** Removed the **Email** field from the registration form to reduce friction. Backend schema updated to handle optional email.
+*   **Session Stability:**
+    *   **Trust Proxy:** Enabled `app.set("trust proxy", 1)` to allow secure cookies behind Render's load balancer.
+    *   **MemoryStore:** Replaced default memory store with `memorystore` package to prevent memory leaks and improve session persistence.
+    *   **Cookie Policy:** Relaxed cookie `sameSite` policy to `lax` to fix the "Invalid Captcha" issue during cross-origin or initial loads.
+
+### **C. Admin & Navigation UX**
+*   **Admin Access:** Added a visible **Admin Shield Icon** to the top header in the main layout (`layout.tsx`). It is conditionally rendered only for users with `isAdmin: true`.
+*   **Crash Fix:** Resolved a critical runtime error on the **Team Page** caused by a missing `framer-motion` import.
+
+### **D. Deployment & CI/CD**
+*   **Render Deployment:**
+    *   Created `render.yaml` (Infrastructure as Code) for one-click deployment.
+    *   Configured **Free Tier** explicitly for Web Service and Postgres.
+    *   Added `/health` endpoint for uptime monitoring.
+*   **Build Optimization:**
+    *   Refactored `server/index.ts` to **lazy-load Vite** dependencies. This prevents the production server from crashing due to bundling build-time ESM plugins (like `@tailwindcss/vite`) into the CJS runtime.
+    *   Switched build output to **CommonJS (`cjs`)** for better Node.js compatibility.
+*   **CI/CD Pipeline:**
+    *   Created `.github/workflows/ci-cd.yml` for automated testing and building on push.
+    *   Added `GITHUB_SETUP.md` with detailed instructions for repository creation and secret management.
