@@ -189,6 +189,9 @@ export async function registerRoutes(
   // API Routes
   // =================================================================
 
+  // Health Check for Render
+  app.get("/health", (_req, res) => res.sendStatus(200));
+
   // --- ACTIVITY & MONITORING ---
 
   app.post("/api/user/heartbeat", async (req, res) => {
