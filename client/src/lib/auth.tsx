@@ -76,7 +76,7 @@ async function logoutUser(): Promise<{ message: string }> {
 type AuthContextType = {
   user: APIUser | null | undefined;
   login: (username: string, password: string) => void;
-  register: (username: string, password: string, name: string, email: string, phoneNumber: string, captcha: string, referralCode?: string) => void;
+  register: (username: string, password: string, name: string, email: string | undefined, phoneNumber: string, captcha: string, referralCode?: string) => void;
   logout: () => void;
   isLoading: boolean;
   language: "en" | "bn";

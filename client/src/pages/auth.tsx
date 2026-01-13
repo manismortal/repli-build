@@ -34,16 +34,11 @@ export default function AuthPage() {
     const mobile = formData.get("mobile") as string;
     const password = formData.get("password") as string;
     const name = formData.get("name") as string;
-    const email = formData.get("email") as string;
     const captcha = formData.get("captcha") as string;
     const referralCode = formData.get("referral") as string;
     
-    // We pass mobile as both username and phoneNumber for now to satisfy the auth context signature
-    // Updated Auth Context signature expects: (username, password, name, email, phoneNumber, captcha, referralCode)
-    // Note: register function in useAuth needs to map these correctly.
-    // Assuming we pass mobile as username.
-    
-    register(mobile, password, name, email, mobile, captcha, referralCode);
+    // Email is removed from registration form
+    register(mobile, password, name, undefined, mobile, captcha, referralCode);
   };
 
   return (
@@ -148,10 +143,6 @@ export default function AuthPage() {
                     <div className="space-y-2">
                       <Label htmlFor="reg-mobile">Mobile Number</Label>
                       <Input id="reg-mobile" name="mobile" placeholder="017xxxxxxxx" required type="tel" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email Address</Label>
-                      <Input id="email" name="email" type="email" placeholder="you@example.com" required />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="reg-pass">Password</Label>
