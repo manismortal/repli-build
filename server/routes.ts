@@ -141,11 +141,12 @@ export async function registerRoutes(
       secret: process.env.SESSION_SECRET || "a-very-secret-secret-key", // Use an environment variable for this
       resave: false,
       saveUninitialized: false,
+      proxy: true, // Enable proxy support for secure cookies
       cookie: {
         secure: process.env.NODE_ENV === "production", // true in production
         httpOnly: true,
         maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
-        sameSite: "strict", // Added security
+        sameSite: "lax",
       },
     })
   );
