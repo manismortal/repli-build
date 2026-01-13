@@ -5,12 +5,12 @@ import { User } from "@shared/schema";
 interface UserAvatarProps {
   user: User & { hasPackage?: boolean };
   className?: string;
-  showStatus?: boolean;
+  showStatus?: boolean; // If true, shows the dot. If false, parent handles it or hidden.
   size?: "sm" | "md" | "lg" | "xl";
 }
 
 export function UserAvatar({ user, className, showStatus = true, size = "md" }: UserAvatarProps) {
-  const hasPackage = user.hasPackage;
+  const hasPackage = user?.hasPackage;
   
   const sizeClasses = {
     sm: "h-8 w-8",
@@ -19,27 +19,41 @@ export function UserAvatar({ user, className, showStatus = true, size = "md" }: 
     xl: "h-24 w-24"
   };
 
+  const statusSize = {
+    sm: "h-2.5 w-2.5",
+    md: "h-3.5 w-3.5",
+    lg: "h-4 w-4",
+    xl: "h-6 w-6"
+  };
+
+  // Deterministic avatar based on user ID
+  const avatarIndex = user?.id 
+    ? (user.id.charCodeAt(0) % 4) + 1 
+    : 1;
+  const avatarSrc = `/avater/avater${avatarIndex}.webp`;
+
   return (
-    <div className={cn("relative inline-block", className)}>
-      <Avatar className={cn("border-2 border-primary/50 p-0.5 bg-white", sizeClasses[size])}>
-        {hasPackage ? (
-          <AvatarImage 
-            src="/attached_assets/maersk_shipping_container_vessel_at_sea.png" 
-            alt="Ship" 
-            className="object-cover" 
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-400">
-            {size === "xl" ? "😢" : "👤"}
-          </div>
-        )}
+    <div className={cn("relative inline-flex", className)}>
+      <Avatar className={cn(
+          "bg-slate-100 ring-2 ring-white dark:ring-slate-800", 
+          sizeClasses[size],
+          hasPackage ? "ring-green-500/30" : "ring-slate-200"
+      )}>
+        <AvatarImage 
+          src={avatarSrc} 
+          alt={user?.name || "User"} 
+          className="object-cover h-full w-full"
+        />
+        <AvatarFallback className="bg-slate-200 text-slate-500 font-bold">
+          {user?.name?.charAt(0).toUpperCase() || user?.username?.charAt(0).toUpperCase() || "U"}
+        </AvatarFallback>
       </Avatar>
       
       {showStatus && (
-        <div className={cn(
-          "absolute rounded-full border-2 border-slate-900 shadow-lg",
-          hasPackage ? "bg-green-500" : "bg-red-500",
-          size === "xl" ? "bottom-1 right-1 h-6 w-6" : "bottom-0 right-0 h-3 w-3"
+        <span className={cn(
+          "absolute bottom-0 right-0 rounded-full border-2 border-white dark:border-slate-900",
+          hasPackage ? "bg-green-500" : "bg-slate-400",
+          statusSize[size]
         )} />
       )}
     </div>

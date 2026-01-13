@@ -6,6 +6,7 @@ import {
   boolean,
   timestamp,
   numeric,
+  integer,
   pgEnum,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
@@ -21,30 +22,36 @@ export const userRoleEnum = pgEnum("user_role", ["user", "area_manager", "region
 // =================================================================
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
+  username: text("username").notNull().unique(), // Will map phoneNumber to this for auth compat
   password: text("password").notNull(),
   name: text("name"),
-  walletNumber: text("wallet_number"),
+  email: text("email"),
+  phoneNumber: text("phone_number").unique(),
   isAdmin: boolean("is_admin").default(false).notNull(),
+  isBanned: boolean("is_banned").default(false).notNull(), // Added for ban logic
+  banReason: text("ban_reason"), // Reason for the ban (e.g., "lazy")
+  lastTaskCompletedAt: timestamp("last_task_completed_at"), // Added for inactivity tracking
+  lastActiveAt: timestamp("last_active_at"), // Last heartbeat/activity
+  status: text("status").default("offline"), // online, offline, idle
   role: userRoleEnum("role").default("user").notNull(),
   referralCode: text("referral_code").unique().notNull(),
-  referredBy: varchar("referred_by"), // Self-reference added manually in logic if needed or just store ID
+  referredBy: varchar("referred_by"), 
+  hasSeenWelcome: boolean("has_seen_welcome").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Self-reference for referredBy
-// Note: Circular references in Drizzle definition can be tricky, 
-// so we'll treat it as a varchar that happens to be a user ID.
-
 export const insertUserSchema = createInsertSchema(users, {
   password: z.string().min(8, "Password must be at least 8 characters long"),
+  email: z.string().email("Invalid email address").optional(), // Optional per "user will put... email" but maybe strictly required? Prompt said "user will put ... email". I'll make it optional in schema but required in form if needed. Let's make it standard z.string().email() but nullable in DB if they skip? Prompt implies fields are: Name, Phone, Email. So Email is likely required input.
 }).pick({
-  username: true,
+  username: true, // Keep for backward compat, optional in form input
   password: true,
   name: true,
-  walletNumber: true,
+  email: true,
+  phoneNumber: true,
 }).extend({
-  referralCode: z.string().optional(), // The code of the referrer
+  referralCode: z.string().optional(),
+  captcha: z.string().optional(), // For controller validation
 });
 
 export type User = typeof users.$inferSelect;
@@ -93,14 +100,18 @@ export const packages = pgTable("packages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   price: numeric("price", { precision: 10, scale: 2 }).notNull(),
+  dailyReward: numeric("daily_reward", { precision: 10, scale: 2 }).default("0.00").notNull(),
   description: text("description"),
+  isVisible: boolean("is_visible").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const insertPackageSchema = createInsertSchema(packages).pick({
   name: true,
   price: true,
+  dailyReward: true,
   description: true,
+  isVisible: true,
 });
 
 export type Package = typeof packages.$inferSelect;
@@ -134,6 +145,12 @@ export const wallets = pgTable("wallets", {
   bonusBalance: numeric("bonus_balance", { precision: 10, scale: 2 })
     .default("250.00")
     .notNull(),
+  lockedBalance: numeric("locked_balance", { precision: 10, scale: 2 })
+    .default("0.00")
+    .notNull(),
+  referralBalance: numeric("referral_balance", { precision: 10, scale: 2 })
+    .default("0.00")
+    .notNull(),
 });
 
 export type Wallet = typeof wallets.$inferSelect;
@@ -147,13 +164,29 @@ export const withdrawalStatusEnum = pgEnum("withdrawal_status", [
   "rejected",
 ]);
 
+export const withdrawalSourceEnum = pgEnum("withdrawal_source", [
+  "main",
+  "referral",
+]);
+
+export const withdrawalMethodEnum = pgEnum("withdrawal_method", [
+  "bkash",
+  "nagad",
+  "binance",
+]);
+
 export const withdrawals = pgTable("withdrawals", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   walletId: varchar("wallet_id")
     .notNull()
     .references(() => wallets.id, { onDelete: "cascade" }),
   amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
+  fee: numeric("fee", { precision: 10, scale: 2 }).default("0.00").notNull(),
+  finalAmount: numeric("final_amount", { precision: 10, scale: 2 }).notNull(),
+  method: withdrawalMethodEnum("method").default("bkash").notNull(),
   status: withdrawalStatusEnum("status").default("pending").notNull(),
+  source: withdrawalSourceEnum("source").default("main").notNull(),
+  destinationNumber: text("destination_number").notNull(),
   requestedAt: timestamp("requested_at").defaultNow().notNull(),
   processedAt: timestamp("processed_at"),
 });
@@ -225,12 +258,15 @@ export type InsertDeposit = z.infer<typeof insertDepositSchema>;
 // =================================================================
 // Tasks (New)
 // =================================================================
+export const linkTypeEnum = pgEnum("link_type", ["video", "subscription", "external"]);
+
 export const tasks = pgTable("tasks", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   title: text("title").notNull(),
   description: text("description"),
-  reward: numeric("reward", { precision: 10, scale: 2 }).notNull(),
-  link: text("link"), // Video link or external link
+  link: text("link"), // Primary link (can be video or external)
+  linkType: linkTypeEnum("link_type").default("video").notNull(),
+  visitDuration: integer("visit_duration").default(60).notNull(),
   active: boolean("active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -238,8 +274,9 @@ export const tasks = pgTable("tasks", {
 export const insertTaskSchema = createInsertSchema(tasks).pick({
   title: true,
   description: true,
-  reward: true,
   link: true,
+  linkType: true,
+  visitDuration: true,
   active: true,
 });
 
@@ -247,7 +284,21 @@ export type Task = typeof tasks.$inferSelect;
 export type InsertTask = z.infer<typeof insertTaskSchema>;
 
 // =================================================================
-// User Tasks (Completion Tracking)
+// Task Sessions (Event-Driven Tracking)
+// =================================================================
+export const taskSessions = pgTable("task_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  taskId: varchar("task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
+  startedAt: timestamp("started_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
+  status: text("status").default("in_progress").notNull(), // 'in_progress', 'completed'
+});
+
+export type TaskSession = typeof taskSessions.$inferSelect;
+
+// =================================================================
+// User Tasks (Completion Tracking - Historical)
 // =================================================================
 export const userTasks = pgTable("user_tasks", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -263,17 +314,48 @@ export const userTasks = pgTable("user_tasks", {
 // =================================================================
 // Notifications
 // =================================================================
+export const notificationTypeEnum = pgEnum("notification_type", [
+  "general",
+  "welcome",
+  "deposit_approved",
+  "withdrawal_approved",
+  "referral_bonus"
+]);
+
 export const notifications = pgTable("notifications", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
+  type: notificationTypeEnum("type").default("general").notNull(),
   message: text("message").notNull(),
   isRead: boolean("is_read").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export type Notification = typeof notifications.$inferSelect;
+
+// =================================================================
+// Activity Logs
+// =================================================================
+export const activityLogs = pgTable("activity_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  action: text("action").notNull(), // 'login', 'logout', 'task_complete', 'heartbeat', 'ban'
+  details: text("details"), // JSON string or text details
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertActivityLogSchema = createInsertSchema(activityLogs).pick({
+  userId: true,
+  action: true,
+  details: true,
+});
+
+export type ActivityLog = typeof activityLogs.$inferSelect;
+export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
 
 // =================================================================
 // Site Settings
@@ -290,6 +372,13 @@ export const siteSettings = pgTable("site_settings", {
   popupImageUrl: text("popup_image_url"),
   popupLink: text("popup_link"),
   popupActive: boolean("popup_active").default(false),
+
+  // Offer Modal Settings
+  offerModalActive: boolean("offer_modal_active").default(false),
+  offerModalTitle: text("offer_modal_title").default("Exclusive Offer!"),
+  offerModalBenefits: text("offer_modal_benefits").default("Unlock premium features now!"), // Can be multiline or JSON string
+  offerModalLink: text("offer_modal_link").default("/products"), // Defaults to products page
+  offerModalCtaText: text("offer_modal_cta_text").default("Subscribe Now"),
   
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

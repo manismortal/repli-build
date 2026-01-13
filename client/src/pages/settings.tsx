@@ -75,7 +75,7 @@ export default function Settings() {
     privacy: language === "bn" ? "গোপনীয়তা নীতি" : "Privacy Policy",
     privacyDesc: language === "bn" ? "ডেটা সুরক্ষা এবং কুকিজ" : "Data protection & cookies",
     agreement: language === "bn" ? "বিনিয়োগ চুক্তি" : "Investment Agreement",
-    agreementDesc: language === "bn" ? "স্ট্যান্ডার্ড ৬০ দিনের শর্তাবলী" : "Standard 60-day terms",
+    agreementDesc: language === "bn" ? "স্ট্যান্ডার্ড ৩০ দিনের শর্তাবলী" : "Standard 30-day terms",
     updateSuccess: language === "bn" ? "প্রোফাইল সফলভাবে আপডেট হয়েছে" : "Profile Updated Successfully",
     updateMsg: language === "bn" ? "আপনার পরিবর্তনগুলি এখন প্ল্যাটফর্ম জুড়ে লাইভ।" : "Your changes are now live across the platform.",
     otpTitle: language === "bn" ? "ওটিপি পাঠানো হয়েছে" : "OTP Dispatch",

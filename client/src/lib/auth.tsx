@@ -1,8 +1,9 @@
-import { createContext, useContext, ReactNode, useState } from "react";
+import { createContext, useContext, ReactNode } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import type { User, InsertUser } from "@shared/schema";
 import { useLocation } from "wouter";
+import { useTranslation } from "react-i18next";
 
 // =================================================================
 // Types
@@ -10,6 +11,8 @@ import { useLocation } from "wouter";
 export type APIUser = User & {
   balance: string;
   bonusBalance: string;
+  lockedBalance: string;
+  referralBalance: string;
   hasPackage: boolean;
 };
 
@@ -73,12 +76,12 @@ async function logoutUser(): Promise<{ message: string }> {
 type AuthContextType = {
   user: APIUser | null | undefined;
   login: (username: string, password: string) => void;
-  register: (username: string, password: string, name?: string, referralCode?: string) => void;
+  register: (username: string, password: string, name: string, email: string, phoneNumber: string, captcha: string, referralCode?: string) => void;
   logout: () => void;
   isLoading: boolean;
   language: "en" | "bn";
   setLanguage: (lang: "en" | "bn") => void;
-  updateBalance: (amount: number) => void; // Added for Products page compat
+  updateBalance: (amount: number) => void; 
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -87,7 +90,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
-  const [language, setLanguage] = useState<"en" | "bn">("bn");
+  const { i18n } = useTranslation();
+
+  const setLanguage = (lang: "en" | "bn") => {
+    i18n.changeLanguage(lang);
+  };
 
   // Query to get the current user
   const { data: user, isLoading, isError } = useQuery<APIUser, Error>({
@@ -114,7 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   // Mutation for registering
   const registerMutation = useMutation({
-    mutationFn: registerUser,
+    mutationFn: (credentials: any) => registerUser(credentials), // wrapper to match mutationFn type if strict
     onSuccess: (newUser) => {
         queryClient.setQueryData(["user", "me"], newUser);
         toast({ title: "Registration Successful", description: "Your account has been created." });
@@ -138,20 +145,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  // Mock update balance for now (Products page uses it, but we are moving to backend)
-  // We keep it to avoid breaking types until refactor
+  // Mock update balance for now
   const updateBalance = (amount: number) => {
-      // Intentionally empty or optimistic update
       console.log("updateBalance called with", amount);
   }
 
   const authContextValue: AuthContextType = {
     user: isError ? null : user,
     login: (username, password) => loginMutation.mutate({ username, password }),
-    register: (username, password, name, referralCode) => registerMutation.mutate({ username, password, name, referralCode }),
+    register: (username, password, name, email, phoneNumber, captcha, referralCode) => 
+      registerMutation.mutate({ username, password, name, email, phoneNumber, captcha, referralCode }),
     logout: () => logoutMutation.mutate(),
     isLoading: isLoading || loginMutation.isPending || registerMutation.isPending,
-    language,
+    language: (i18n.language?.startsWith("bn") ? "bn" : "en") as "en" | "bn",
     setLanguage,
     updateBalance
   };

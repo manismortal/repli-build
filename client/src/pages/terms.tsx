@@ -36,9 +36,9 @@ export default function TermsAndConditions() {
           "ন্যূনতম উত্তোলনের পরিমাণ ৫০০ টাকা।",
           "উত্তোলনের সময় ৫% থেকে ১০% সার্ভিস চার্জ প্রযোজ্য হতে পারে।",
           "উত্তোলনের অনুরোধ ২৪ থেকে ৭২ ঘণ্টার মধ্যে প্রসেস করা হবে।",
-          "ব্যবহারকারীরা ২৫০ টাকা ওয়েলকাম বোনাস পাবেন। এই বোনাস ৬০ দিনের জন্য লক করা থাকবে।",
-          "গুরুত্বপূর্ণ: যদি ৬০ দিনের আগে কোনো টাকা উত্তোলন করা হয়, তবে ওয়েলকাম বোনাস বাতিল হয়ে যাবে।",
-          "বোনাস দাবি করতে হলে, প্রথম ৬০ দিন কোনো টাকা উত্তোলন করা যাবে না।"
+          "ব্যবহারকারীরা ২৫০ টাকা ওয়েলকাম বোনাস পাবেন। এই বোনাস ৩০ দিনের জন্য লক করা থাকবে।",
+          "গুরুত্বপূর্ণ: যদি ৩০ দিনের আগে কোনো টাকা উত্তোলন করা হয়, তবে ওয়েলকাম বোনাস বাতিল হয়ে যাবে।",
+          "বোনাস দাবি করতে হলে, প্রথম ৩০ দিন কোনো টাকা উত্তোলন করা যাবে না।"
         ]
       },
       {
@@ -80,9 +80,9 @@ export default function TermsAndConditions() {
           "Minimum withdrawal amount is 500 BDT.",
           "A service charge of 5% to 10% may apply to withdrawals.",
           "Withdrawal requests will be processed within 24 to 72 hours.",
-          "Users receive a 250 BDT Welcome Bonus. This bonus is locked for 60 days.",
-          "IMPORTANT: If any withdrawal is made before 60 days, the Welcome Bonus will be FORFEITED.",
-          "To claim the bonus, you must not withdraw any funds for the first 60 days."
+          "Users receive a 250 BDT Welcome Bonus. This bonus is locked for 30 days.",
+          "IMPORTANT: If any withdrawal is made before 30 days, the Welcome Bonus will be FORFEITED.",
+          "To claim the bonus, you must not withdraw any funds for the first 30 days."
         ]
       },
       {

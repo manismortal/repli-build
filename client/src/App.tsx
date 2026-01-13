@@ -1,4 +1,4 @@
-import { Switch, Route, Redirect } from "wouter";
+import { Switch, Route, Redirect, Router as Wouter } from "wouter";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -22,6 +22,8 @@ import Notifications from "@/pages/notifications";
 import Terms from "@/pages/terms";
 import Withdraw from "@/pages/withdraw";
 import Support from "@/pages/support";
+import About from "@/pages/about";
+import PaymentTimeout from "@/pages/payment-timeout";
 
 // Admin Imports
 import AdminLayout from "@/pages/admin/layout";
@@ -34,9 +36,12 @@ import AdminSettings from "@/pages/admin/settings";
 import AdminNotifications from "@/pages/admin/notifications";
 import AdminAgents from "@/pages/admin/agents";
 import AdminReports from "@/pages/admin/reports";
+import AdminTasks from "@/pages/admin/tasks";
+import { useActivityTracker } from "@/hooks/use-activity-tracker";
 
 function Router() {
   const { user } = useAuth();
+  useActivityTracker();
 
   if (!user) {
     return (
@@ -51,27 +56,36 @@ function Router() {
 
   return (
     <Switch>
-      {/* Admin Routes */}
-      <Route path="/admin*">
-        {() => {
-          if (!user?.isAdmin) return <Redirect to="/dashboard" />;
-          return (
-            <AdminLayout>
-              <Switch>
-                <Route path="/admin" component={AdminDashboard} />
-                <Route path="/admin/users" component={AdminUsers} />
-                <Route path="/admin/deposits" component={AdminDeposits} />
-                <Route path="/admin/withdrawals" component={AdminWithdrawals} />
-                <Route path="/admin/packages" component={AdminPackages} />
-                <Route path="/admin/notifications" component={AdminNotifications} />
-                <Route path="/admin/settings" component={AdminSettings} />
-                <Route path="/admin/agents" component={AdminAgents} />
-                <Route path="/admin/reports" component={AdminReports} />
-                <Route component={NotFound} />
-              </Switch>
-            </AdminLayout>
-          );
-        }}
+      {/* Admin Routes - Flattened for Reliability */}
+      <Route path="/admin">
+        {user?.isAdmin ? <AdminLayout><AdminDashboard /></AdminLayout> : <Redirect to="/dashboard" />}
+      </Route>
+      <Route path="/admin/users">
+        {user?.isAdmin ? <AdminLayout><AdminUsers /></AdminLayout> : <Redirect to="/dashboard" />}
+      </Route>
+      <Route path="/admin/deposits">
+        {user?.isAdmin ? <AdminLayout><AdminDeposits /></AdminLayout> : <Redirect to="/dashboard" />}
+      </Route>
+      <Route path="/admin/withdrawals">
+        {user?.isAdmin ? <AdminLayout><AdminWithdrawals /></AdminLayout> : <Redirect to="/dashboard" />}
+      </Route>
+      <Route path="/admin/packages">
+        {user?.isAdmin ? <AdminLayout><AdminPackages /></AdminLayout> : <Redirect to="/dashboard" />}
+      </Route>
+      <Route path="/admin/tasks">
+        {user?.isAdmin ? <AdminLayout><AdminTasks /></AdminLayout> : <Redirect to="/dashboard" />}
+      </Route>
+      <Route path="/admin/notifications">
+        {user?.isAdmin ? <AdminLayout><AdminNotifications /></AdminLayout> : <Redirect to="/dashboard" />}
+      </Route>
+      <Route path="/admin/settings">
+        {user?.isAdmin ? <AdminLayout><AdminSettings /></AdminLayout> : <Redirect to="/dashboard" />}
+      </Route>
+      <Route path="/admin/agents">
+        {user?.isAdmin ? <AdminLayout><AdminAgents /></AdminLayout> : <Redirect to="/dashboard" />}
+      </Route>
+      <Route path="/admin/reports">
+        {user?.isAdmin ? <AdminLayout><AdminReports /></AdminLayout> : <Redirect to="/dashboard" />}
       </Route>
 
       {/* User Routes */}
@@ -79,11 +93,13 @@ function Router() {
       <Route path="/payment/bkash" component={BkashPayment} />
       <Route path="/payment/nagad" component={NagadPayment} />
       <Route path="/payment/binance" component={BinancePayment} />
+      <Route path="/payment-timeout" component={PaymentTimeout} />
       <Route path="/withdraw" component={Withdraw} />
       <Route path="/support" component={Support} />
       <Route>
         <Layout>
           <Switch>
+            <Route path="/about" component={About} />
             <Route path="/" component={Dashboard} />
             <Route path="/dashboard" component={Dashboard} />
             <Route path="/products">
@@ -92,6 +108,8 @@ function Router() {
             <Route path="/tasks" component={Tasks} />
             <Route path="/wallet" component={Wallet} />
             <Route path="/team" component={Team} />
+            <Route path="/referral"><Redirect to="/team" /></Route>
+            <Route path="/referrel"><Redirect to="/team" /></Route>
             <Route path="/settings" component={Settings} />
             <Route path="/profile" component={Profile} />
             <Route path="/notifications" component={Notifications} />

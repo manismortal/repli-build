@@ -3,6 +3,7 @@ import { createServer } from "http";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { agentService } from "./services/agent";
+import { setupWebSocket } from "./ws";
 
 const app = express();
 app.use(express.json());
@@ -14,6 +15,7 @@ setInterval(() => {
 }, 60 * 60 * 1000); // 1 Hour
 
 const httpServer = createServer(app);
+setupWebSocket(httpServer);
 
 app.use((req, res, next) => {
   const start = Date.now();

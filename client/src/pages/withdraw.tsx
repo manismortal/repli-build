@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ChevronLeft, Info, Home, Wallet, AlertTriangle, Lock, Unlock } from "lucide-react";
+import { ChevronLeft, Home, CreditCard, Banknote, Smartphone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
@@ -21,100 +21,95 @@ export default function Withdraw() {
   const [, setLocation] = useLocation();
   const { user, language } = useAuth();
   const { toast } = useToast();
+  const [method, setMethod] = useState<'bkash' | 'nagad' | 'binance'>('bkash');
   const [step, setStep] = useState(1);
   const [amount, setAmount] = useState("");
-  const [walletNumber, setWalletNumber] = useState(user?.walletNumber || "");
+  const [destinationNumber, setDestinationNumber] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showForfeitWarning, setShowForfeitWarning] = useState(false);
-
-  // Calculate days since registration
-  const registrationDate = new Date(user?.createdAt || new Date());
-  const today = new Date();
-  const diffTime = Math.abs(today.getTime() - registrationDate.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  const daysLeft = Math.max(0, 60 - diffDays);
-  const isBonusLocked = daysLeft > 0;
-
-  const balance = parseFloat(user?.balance || "0");
-  const bonusBalance = parseFloat(user?.bonusBalance || "0");
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   
-  // If user hasn't set wallet number yet, we force step 0
-  const [isSettingWallet, setIsSettingWallet] = useState(!user?.walletNumber);
+  // Read query params
+  const searchParams = new URLSearchParams(window.location.search);
+  const defaultSource = searchParams.get("source") === "referral" ? "referral" : "main";
+  const [source, setSource] = useState<'main' | 'referral'>(defaultSource as 'main' | 'referral');
+
+  const mainBalance = parseFloat(user?.balance || "0");
+  const referralBalance = parseFloat(user?.referralBalance || "0");
+  
+  const currentBalance = source === 'main' ? mainBalance : referralBalance;
+  
+  // Fee Calculation
+  const feePercent = method === 'binance' ? 0.02 : 0.05;
+  const numericAmount = parseFloat(amount || "0");
+  const fee = numericAmount * feePercent;
+  const finalAmount = numericAmount - fee;
 
   const t = {
     title: language === "bn" ? "উত্তোলন" : "Withdraw",
-    method: language === "bn" ? "বিকাশ পার্সোনাল" : "bKash Personal",
-    setupTitle: language === "bn" ? "উত্তোলন ওয়ালেট সেটআপ" : "Setup Withdrawal Wallet",
-    setupDesc: language === "bn" ? "টাকা পেতে আপনার ব্যক্তিগত বিকাশ নম্বর লিখুন।" : "Please enter your personal bKash number to receive funds.",
-    walletLabel: language === "bn" ? "বিকাশ নম্বর" : "bKash Number",
-    saveBtn: language === "bn" ? "সেভ এবং চালিয়ে যান" : "SAVE & CONTINUE",
-    saving: language === "bn" ? "সেভ হচ্ছে..." : "SAVING...",
+    subtitle: language === "bn" ? "আপনার পছন্দের মাধ্যম নির্বাচন করুন" : "Select your preferred method",
     mainBal: language === "bn" ? "মূল ব্যালেন্স" : "Main Balance",
-    bonusBal: language === "bn" ? "বোনাস ব্যালেন্স" : "Bonus Balance",
-    unlocksIn: language === "bn" ? "আনলক হবে" : "Unlocks in",
-    days: language === "bn" ? "দিনে" : "days",
+    referralBal: language === "bn" ? "রেফারেল ব্যালেন্স" : "Referral Balance",
     enterAmount: language === "bn" ? "উত্তোলনের পরিমাণ লিখুন" : "Enter Withdrawal Amount",
-    withdrawTo: language === "bn" ? "উত্তোলন করা হচ্ছে:" : "Withdrawing to:",
-    minWithdraw: language === "bn" ? "সর্বনিম্ন উত্তোলন ৳৫০০" : "Minimum withdrawal ৳500",
+    destLabel: method === 'binance' ? (language === "bn" ? "বাইনান্স পে আইডি / টিআরসি২০" : "Binance Pay ID / TRC20") : (language === "bn" ? `${method === 'bkash' ? 'বিকাশ' : 'নগদ'} নম্বর` : `${method === 'bkash' ? 'bKash' : 'Nagad'} Number`),
+    destPlaceholder: method === 'binance' ? "Pay ID or Address" : "01XXXXXXXXX",
     confirmBtn: language === "bn" ? "উত্তোলন নিশ্চিত করুন" : "CONFIRM WITHDRAWAL",
     processing: language === "bn" ? "প্রক্রিয়াধীন..." : "PROCESSING...",
     successTitle: language === "bn" ? "উত্তোলনের অনুরোধ গৃহীত হয়েছে" : "Withdrawal Requested",
     successMsg: language === "bn" ? `৳${amount} এর জন্য আপনার অনুরোধ সফলভাবে জমা দেওয়া হয়েছে।` : `Your request for ৳${amount} has been submitted successfully.`,
     backHome: language === "bn" ? "হোমে ফিরে যান" : "BACK TO HOME",
-    warningTitle: language === "bn" ? "সতর্কতা: বোনাস বাতিল" : "Warning: Bonus Forfeiture",
-    warningDesc1: language === "bn" ? "আপনি ৬০ দিনের লক পিরিয়ড শেষ হওয়ার আগেই উত্তোলন করতে চাইছেন।" : "You are attempting to withdraw before the 60-day lock period.",
-    warningDesc2: language === "bn" ? `এগিয়ে গেলে আপনার ৳${bonusBalance} বোনাস ব্যালেন্স স্থায়ীভাবে মুছে ফেলা হবে।` : `Proceeding will permanently remove your ৳${bonusBalance} Bonus Balance.`,
-    warningConfirm: language === "bn" ? "হ্যাঁ, বোনাস বাতিল করুন এবং উত্তোলন করুন" : "Yes, Forfeit Bonus & Withdraw",
-    cancel: language === "bn" ? "বাতিল" : "Cancel",
-  };
-
-  const handleSaveWallet = async () => {
-      if (walletNumber.length !== 11) {
-          toast({ 
-            title: language === "bn" ? "ভুল নম্বর" : "Invalid Number", 
-            description: language === "bn" ? "অনুগ্রহ করে একটি সঠিক ১১-ডিজিটের বিকাশ নম্বর দিন।" : "Please enter a valid 11-digit bKash number.", 
-            variant: "destructive" 
-          });
-          return;
-      }
-      try {
-          setIsSubmitting(true);
-          await apiRequest("PUT", "/api/users/wallet", { walletNumber });
-          await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
-          setIsSettingWallet(false);
-          toast({ title: language === "bn" ? "সফল" : "Success", description: language === "bn" ? "উত্তোলন ওয়ালেট সেভ হয়েছে।" : "Withdrawal wallet saved." });
-      } catch (e) {
-          toast({ title: language === "bn" ? "ত্রুটি" : "Error", description: language === "bn" ? "ওয়ালেট নম্বর সেভ করতে ব্যর্থ।" : "Failed to save wallet number.", variant: "destructive" });
-      } finally {
-          setIsSubmitting(false);
-      }
+    fee: language === "bn" ? "ফি" : "Fee",
+    final: language === "bn" ? "আপনি পাবেন" : "You Receive",
   };
 
   const handleWithdrawClick = () => {
-    if (!amount || parseFloat(amount) < 500) {
+    if (!amount || parseFloat(amount) <= 0) {
       toast({ 
         title: language === "bn" ? "অবৈধ পরিমাণ" : "Invalid Amount", 
-        description: language === "bn" ? "সর্বনিম্ন উত্তোলন ৳৫০০" : "Minimum withdrawal is ৳500", 
+        description: language === "bn" ? "অনুগ্রহ করে একটি সঠিক পরিমাণ লিখুন।" : "Please enter a valid amount.", 
         variant: "destructive" 
       });
       return;
     }
     
-    // Check if bonus will be forfeited
-    if (isBonusLocked && bonusBalance > 0) {
-        setShowForfeitWarning(true);
-    } else {
-        submitWithdrawal();
+    if (source === 'referral' && parseFloat(amount) < 150) {
+        toast({ 
+            title: language === "bn" ? "সর্বনিম্ন সীমা" : "Minimum Limit", 
+            description: language === "bn" ? "রেফারেল উত্তোলনের জন্য সর্বনিম্ন ১৫০ টাকা।" : "Minimum referral withdrawal is 150 BDT.", 
+            variant: "destructive" 
+        });
+        return;
     }
+    
+    if (parseFloat(amount) > currentBalance) {
+         toast({ 
+            title: language === "bn" ? "অপর্যাপ্ত ব্যালেন্স" : "Insufficient Balance", 
+            description: language === "bn" ? "আপনার পর্যাপ্ত ব্যালেন্স নেই।" : "You do not have enough funds.", 
+            variant: "destructive" 
+        });
+        return;
+    }
+
+    if (!destinationNumber || destinationNumber.length < (method === 'binance' ? 5 : 11)) {
+        toast({
+            title: language === "bn" ? "ভুল নম্বর/আইডি" : "Invalid Number/ID",
+            description: language === "bn" ? "অনুগ্রহ করে সঠিক তথ্য দিন।" : "Please enter valid details.",
+            variant: "destructive"
+        });
+        return;
+    }
+
+    setIsConfirmOpen(true);
   };
 
   const submitWithdrawal = async () => {
     setIsSubmitting(true);
     try {
-      await apiRequest("POST", "/api/withdrawals", { amount });
+      await apiRequest("POST", "/api/withdrawals", { amount, source, destinationNumber, method });
       await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      setIsConfirmOpen(false);
       setStep(2); // Success Screen
     } catch (e: any) {
+      setIsConfirmOpen(false);
       toast({ 
           title: language === "bn" ? "উত্তোলন ব্যর্থ" : "Withdrawal Failed", 
           description: e.message || "Insufficient funds or error.", 
@@ -122,7 +117,6 @@ export default function Withdraw() {
       });
     } finally {
       setIsSubmitting(false);
-      setShowForfeitWarning(false);
     }
   };
 
@@ -145,144 +139,165 @@ export default function Withdraw() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f1f1f1] flex flex-col font-sans">
+    <div className="min-h-screen bg-[#f8f9fa] flex flex-col font-sans">
       {/* Header */}
-      <header className="bg-[#e2136e] text-white p-4 flex items-center justify-between sticky top-0 z-50">
+      <header className="bg-primary text-primary-foreground p-4 flex items-center justify-between sticky top-0 z-50 shadow-md">
         <div className="flex items-center gap-3">
-          <button onClick={() => setLocation("/wallet")} className="p-1">
+          <button onClick={() => setLocation("/wallet")} className="p-1 hover:bg-white/10 rounded-full transition-colors">
             <ChevronLeft className="h-6 w-6" />
           </button>
           <div className="flex flex-col">
             <span className="font-bold text-lg leading-none">{t.title}</span>
-            <span className="text-[10px] opacity-80 uppercase tracking-tighter">{t.method}</span>
+            <span className="text-[10px] opacity-80">{t.subtitle}</span>
           </div>
-        </div>
-        <div className="bg-white/20 p-2 rounded-full">
-          <Home className="h-5 w-5" />
         </div>
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col max-w-md mx-auto w-full bg-white shadow-sm overflow-hidden p-6 space-y-6">
+      <div className="flex-1 flex flex-col max-w-md mx-auto w-full bg-white shadow-xl overflow-hidden p-6 space-y-6">
         
-        {isSettingWallet ? (
-            <div className="space-y-6 animate-in slide-in-from-right">
-                <div className="text-center space-y-2">
-                    <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Wallet className="h-8 w-8 text-blue-600" />
-                    </div>
-                    <h2 className="text-xl font-bold text-gray-800">{t.setupTitle}</h2>
-                    <p className="text-sm text-gray-500">{t.setupDesc}</p>
-                </div>
+        <div className="space-y-6 animate-in slide-in-from-right duration-500">
+            
+            <Tabs defaultValue="main" value={source} onValueChange={(v) => setSource(v as any)} className="w-full">
+                <TabsList className="grid w-full grid-cols-2 mb-4 p-1 bg-muted rounded-xl">
+                    <TabsTrigger value="main" className="rounded-lg">{t.mainBal}</TabsTrigger>
+                    <TabsTrigger value="referral" className="rounded-lg">{t.referralBal}</TabsTrigger>
+                </TabsList>
                 
-                <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700">{t.walletLabel}</label>
+                <div className="p-6 rounded-2xl border bg-gradient-to-br from-white to-gray-50 shadow-sm">
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1">
+                                {source === 'main' ? t.mainBal : t.referralBal}
+                            </p>
+                            <p className="text-3xl font-heading font-bold text-gray-900">৳{currentBalance.toLocaleString()}</p>
+                        </div>
+                        <div className={`p-3 rounded-xl ${source === 'main' ? 'bg-primary/10 text-primary' : 'bg-purple-100 text-purple-600'}`}>
+                            {source === 'main' ? <Banknote className="h-6 w-6" /> : <CreditCard className="h-6 w-6" />}
+                        </div>
+                    </div>
+                </div>
+            </Tabs>
+
+            {/* Method Selection */}
+            <div className="grid grid-cols-3 gap-3">
+                {[
+                    { id: 'bkash', name: 'bKash', img: '/payment/bkash.webp', color: 'border-pink-500 bg-pink-50' },
+                    { id: 'nagad', name: 'Nagad', img: '/payment/nagad.webp', color: 'border-orange-500 bg-orange-50' },
+                    { id: 'binance', name: 'Binance', img: '/payment/binance.webp', color: 'border-yellow-500 bg-yellow-50' }
+                ].map((m) => (
+                    <button
+                        key={m.id}
+                        onClick={() => setMethod(m.id as any)}
+                        className={`relative flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all duration-200 ${
+                            method === m.id 
+                            ? `${m.color} shadow-sm` 
+                            : 'border-transparent bg-gray-50 hover:bg-gray-100'
+                        }`}
+                    >
+                        {method === m.id && (
+                            <div className="absolute top-1 right-1">
+                                <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                                    <CheckIcon className="w-3 h-3 text-white" />
+                                </div>
+                            </div>
+                        )}
+                        <img 
+                            src={m.img} 
+                            alt={m.name} 
+                            className="w-10 h-10 object-contain mb-2 drop-shadow-sm" 
+                            onError={(e) => e.currentTarget.style.display = 'none'} 
+                            loading="lazy"
+                        />
+                        <span className={`text-xs font-bold ${method === m.id ? 'text-gray-900' : 'text-gray-500'}`}>{m.name}</span>
+                        {/* Fallback Icon if Image Fails */}
+                         <div className="hidden">
+                             <CreditCard className="w-6 h-6 mb-1"/>
+                         </div>
+                    </button>
+                ))}
+            </div>
+
+            {/* Destination Number */}
+            <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700">{t.destLabel}</label>
+                <div className="relative">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
+                        <Smartphone className="h-4 w-4" />
+                    </div>
                     <Input 
-                        value={walletNumber}
-                        onChange={(e) => setWalletNumber(e.target.value)}
-                        placeholder="017XXXXXXXX"
-                        className="h-14 text-lg border-2 focus-visible:ring-[#e2136e] rounded-xl"
-                        maxLength={11}
+                        value={destinationNumber}
+                        onChange={(e) => setDestinationNumber(e.target.value)}
+                        placeholder={t.destPlaceholder}
+                        className="h-14 pl-10 text-lg border-2 focus-visible:ring-primary rounded-xl bg-gray-50"
                     />
                 </div>
-                
-                <Button 
-                    className="w-full bg-[#e2136e] hover:bg-[#c0105d] text-white h-14 rounded-xl font-bold"
-                    onClick={handleSaveWallet}
-                    disabled={isSubmitting}
-                >
-                    {isSubmitting ? t.saving : t.saveBtn}
-                </Button>
             </div>
-        ) : (
-            <div className="space-y-8 animate-in slide-in-from-right">
-                {/* Balance Cards */}
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                        <p className="text-[10px] text-gray-500 uppercase font-bold">{t.mainBal}</p>
-                        <p className="text-2xl font-bold text-gray-800">৳{balance.toLocaleString()}</p>
+
+            {/* Amount Input */}
+            <div className="space-y-4">
+                <div className="text-center bg-gray-50 rounded-2xl p-6 border-2 border-dashed border-gray-200">
+                    <p className="text-sm text-muted-foreground mb-2 font-medium">{t.enterAmount}</p>
+                    <div className="relative inline-block max-w-[200px]">
+                        <span className="absolute left-0 top-1/2 -translate-y-1/2 text-2xl font-bold text-gray-400">৳</span>
+                        <input
+                            type="number"
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                            placeholder="0"
+                            className="text-4xl font-bold text-center w-full focus:outline-none bg-transparent placeholder:text-gray-300 pl-6"
+                        />
                     </div>
-                    <div className={`p-4 rounded-xl border ${isBonusLocked ? 'bg-yellow-50 border-yellow-100' : 'bg-green-50 border-green-100'}`}>
-                        <div className="flex justify-between items-start">
-                             <div>
-                                <p className={`text-[10px] uppercase font-bold ${isBonusLocked ? 'text-yellow-600' : 'text-green-600'}`}>
-                                    {t.bonusBal}
-                                </p>
-                                <p className={`text-2xl font-bold ${isBonusLocked ? 'text-yellow-700' : 'text-green-700'}`}>
-                                    ৳{bonusBalance.toLocaleString()}
-                                </p>
-                             </div>
-                             {isBonusLocked ? <Lock className="h-4 w-4 text-yellow-500" /> : <Unlock className="h-4 w-4 text-green-500" />}
+                    {/* Fee Calculation Display */}
+                    {numericAmount > 0 && (
+                        <div className="mt-4 pt-4 border-t flex justify-between text-sm">
+                            <span className="text-muted-foreground">{t.fee} ({(feePercent * 100)}%):</span>
+                            <span className="font-medium text-red-500">-৳{fee.toFixed(2)}</span>
                         </div>
-                        {isBonusLocked && (
-                            <p className="text-[10px] text-yellow-600 mt-1 font-medium">
-                                {t.unlocksIn} {daysLeft} {t.days}
-                            </p>
-                        )}
-                    </div>
-                </div>
-
-                {/* Amount Input */}
-                <div className="space-y-4">
-                    <div className="text-center">
-                        <p className="text-sm text-gray-500 mb-2">{t.enterAmount}</p>
-                        <div className="relative inline-block">
-                            <span className="absolute left-0 top-1/2 -translate-y-1/2 text-2xl font-bold text-[#e2136e]">৳</span>
-                            <input
-                                type="number"
-                                value={amount}
-                                onChange={(e) => setAmount(e.target.value)}
-                                placeholder="0"
-                                className="text-5xl font-bold text-center w-full focus:outline-none placeholder:text-gray-200 pl-6"
-                            />
+                    )}
+                    {numericAmount > 0 && (
+                        <div className="mt-1 flex justify-between text-sm font-bold">
+                            <span className="text-gray-700">{t.final}:</span>
+                            <span className="text-green-600">৳{finalAmount.toFixed(2)}</span>
                         </div>
-                    </div>
-                    
-                     <div className="bg-blue-50 p-4 rounded-xl flex gap-3 items-start">
-                        <Info className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
-                        <p className="text-xs text-blue-600 leading-relaxed">
-                            {t.withdrawTo} <span className="font-bold">{walletNumber}</span>. {t.minWithdraw}
-                        </p>
-                    </div>
+                    )}
                 </div>
-
-                <Button 
-                    className="w-full bg-[#e2136e] hover:bg-[#c0105d] text-white h-14 rounded-xl font-bold text-lg shadow-lg shadow-[#e2136e]/20"
-                    onClick={handleWithdrawClick}
-                    disabled={isSubmitting}
-                >
-                    {isSubmitting ? t.processing : t.confirmBtn}
-                </Button>
             </div>
-        )}
-      </div>
 
-      {/* Warning Modal */}
-      <AlertDialog open={showForfeitWarning} onOpenChange={setShowForfeitWarning}>
-        <AlertDialogContent className="rounded-2xl">
-          <AlertDialogHeader>
-            <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-2">
-                <AlertTriangle className="h-6 w-6 text-red-600" />
-            </div>
-            <AlertDialogTitle className="text-center text-red-600">{t.warningTitle}</AlertDialogTitle>
-            <AlertDialogDescription className="text-center">
-              {t.warningDesc1}
-              <br /><br />
-              <strong>{t.warningDesc2}</strong>
-              <br /><br />
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="sm:justify-center gap-2">
-            <AlertDialogCancel className="w-full rounded-xl h-12">{t.cancel}</AlertDialogCancel>
-            <AlertDialogAction 
-                onClick={submitWithdrawal}
-                className="w-full bg-red-600 hover:bg-red-700 rounded-xl h-12"
+            <Button 
+                className="w-full h-14 rounded-xl font-bold text-lg shadow-lg shadow-primary/25 transition-all hover:scale-[1.02] active:scale-95"
+                onClick={handleWithdrawClick}
+                disabled={isSubmitting}
             >
-                {t.warningConfirm}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+                {isSubmitting ? t.processing : t.confirmBtn}
+            </Button>
+        </div>
+
+        <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+            <AlertDialogContent className="rounded-2xl">
+                <AlertDialogHeader>
+                    <AlertDialogTitle>{t.confirmBtn}?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        You are about to withdraw <span className="font-bold text-gray-900">৳{amount}</span> from your <span className="font-bold text-gray-900">{source === 'main' ? 'Main' : 'Referral'} Balance</span>.
+                        <br /><br />
+                        Method: <span className="font-bold text-gray-900 capitalize">{method}</span>
+                        <br />
+                        Number: <span className="font-bold text-gray-900">{destinationNumber}</span>
+                        <br />
+                        Fee: <span className="text-red-500 font-bold">৳{fee.toFixed(2)}</span>
+                        <br />
+                        You Receive: <span className="text-green-600 font-bold">৳{finalAmount.toFixed(2)}</span>
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={submitWithdrawal} className="bg-primary text-primary-foreground font-bold">
+                        {isSubmitting ? "Processing..." : "Confirm"}
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+      </div>
     </div>
   );
 }

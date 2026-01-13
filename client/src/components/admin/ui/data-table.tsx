@@ -34,6 +34,12 @@ interface AdminTableProps<T> {
   onSearch?: (query: string) => void;
   isLoading?: boolean;
   itemsPerPage?: number;
+  
+  // Server-side pagination props
+  manualPagination?: boolean;
+  totalItems?: number;
+  currentPage?: number;
+  onPageChange?: (page: number) => void;
 }
 
 export function AdminTable<T extends { id: string | number }>({
@@ -43,35 +49,49 @@ export function AdminTable<T extends { id: string | number }>({
   searchPlaceholder = "Search...",
   onSearch,
   isLoading,
-  itemsPerPage = 10
+  itemsPerPage = 10,
+  
+  manualPagination = false,
+  totalItems = 0,
+  currentPage: externalPage = 1,
+  onPageChange
 }: AdminTableProps<T>) {
-  const [currentPage, setCurrentPage] = useState(1);
+  const [internalPage, setInternalPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Filter Data
-  const filteredData = data.filter(item => {
+  // Use internal or external page state
+  const currentPage = manualPagination ? externalPage : internalPage;
+
+  // Filter Data (Only for client-side)
+  const filteredData = manualPagination ? data : data.filter(item => {
     if (!searchQuery) return true;
-    // Basic generic search on all string values of item
     return Object.values(item).some(val => 
       String(val).toLowerCase().includes(searchQuery.toLowerCase())
     );
   });
 
   // Pagination Logic
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentData = filteredData.slice(startIndex, endIndex);
+  const totalPages = manualPagination 
+    ? Math.ceil(totalItems / itemsPerPage)
+    : Math.ceil(filteredData.length / itemsPerPage);
+
+  const currentData = manualPagination 
+    ? data 
+    : filteredData.slice((currentPage - 1) * itemsPerPage, (currentPage - 1) * itemsPerPage + itemsPerPage);
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
+      if (manualPagination) {
+        onPageChange?.(page);
+      } else {
+        setInternalPage(page);
+      }
     }
   };
 
   const handleSearch = (query: string) => {
       setSearchQuery(query);
-      setCurrentPage(1); // Reset to page 1 on search
+      if (!manualPagination) setInternalPage(1);
       onSearch?.(query);
   }
 

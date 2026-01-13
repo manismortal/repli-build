@@ -5,13 +5,15 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
-import { Ship } from "lucide-react";
+import { Ship, RefreshCw } from "lucide-react";
+import { useState } from "react";
 
-const shipImage = "/maersk_shipping_container_vessel_at_sea.png";
+const shipImage = "/maersk_shipping_container_vessel_at_sea.webp";
 
 export default function AuthPage() {
   const { login, register, user, isLoading } = useAuth();
   const [, setLocation] = useLocation();
+  const [captchaTrigger, setCaptchaTrigger] = useState(Date.now());
 
   if (user) {
     setLocation("/dashboard");
@@ -32,9 +34,16 @@ export default function AuthPage() {
     const mobile = formData.get("mobile") as string;
     const password = formData.get("password") as string;
     const name = formData.get("name") as string;
+    const email = formData.get("email") as string;
+    const captcha = formData.get("captcha") as string;
     const referralCode = formData.get("referral") as string;
     
-    register(mobile, password, name, referralCode);
+    // We pass mobile as both username and phoneNumber for now to satisfy the auth context signature
+    // Updated Auth Context signature expects: (username, password, name, email, phoneNumber, captcha, referralCode)
+    // Note: register function in useAuth needs to map these correctly.
+    // Assuming we pass mobile as username.
+    
+    register(mobile, password, name, email, mobile, captcha, referralCode);
   };
 
   return (
@@ -68,7 +77,7 @@ export default function AuthPage() {
             </p>
             <div className="flex gap-4 pt-4">
               <div className="bg-sidebar-accent/50 backdrop-blur-sm p-4 rounded-lg border border-white/10">
-                <p className="text-2xl font-bold font-heading">15 Days</p>
+                <p className="text-2xl font-bold font-heading">30 Days</p>
                 <p className="text-sm text-muted-foreground">Short Term Cycles</p>
               </div>
               <div className="bg-sidebar-accent/50 backdrop-blur-sm p-4 rounded-lg border border-white/10">
@@ -141,9 +150,33 @@ export default function AuthPage() {
                       <Input id="reg-mobile" name="mobile" placeholder="017xxxxxxxx" required type="tel" />
                     </div>
                     <div className="space-y-2">
+                      <Label htmlFor="email">Email Address</Label>
+                      <Input id="email" name="email" type="email" placeholder="you@example.com" required />
+                    </div>
+                    <div className="space-y-2">
                       <Label htmlFor="reg-pass">Password</Label>
                       <Input id="reg-pass" name="password" type="password" required />
                     </div>
+                    
+                    <div className="space-y-2">
+                        <Label htmlFor="captcha">Security Check</Label>
+                        <div className="flex gap-2">
+                             <div className="bg-slate-100 rounded border overflow-hidden shrink-0 h-[40px] w-[120px] relative flex items-center justify-center">
+                                <img 
+                                    src={`/api/auth/captcha?t=${captchaTrigger}`} 
+                                    alt="Captcha" 
+                                    className="h-full w-full object-cover cursor-pointer"
+                                    onClick={() => setCaptchaTrigger(Date.now())}
+                                    title="Click to refresh"
+                                />
+                             </div>
+                             <Button type="button" variant="outline" size="icon" onClick={() => setCaptchaTrigger(Date.now())}>
+                                 <RefreshCw className="h-4 w-4" />
+                             </Button>
+                             <Input id="captcha" name="captcha" placeholder="Enter code" className="flex-1" required />
+                        </div>
+                    </div>
+
                     <div className="space-y-2">
                       <Label htmlFor="referral">Referral Code (Optional)</Label>
                       <Input id="referral" name="referral" placeholder="Enter code" />

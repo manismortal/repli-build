@@ -1,0 +1,41 @@
+{
+  "common": {
+    "welcome": "আবার স্বাগতম",
+    "balance": "ব্যালেন্স",
+    "available": "বিনিয়োগের জন্য উপলব্ধ",
+    "locked": "লক করা ব্যালেন্স",
+    "active_investments": "সক্রিয় বিনিয়োগে",
+    "growth": "মোট বৃদ্ধি",
+    "referral_bonus": "রেফারেল বোনাস",
+    "account_status": "অ্যাকাউন্টের অবস্থা",
+    "active": "সক্রিয়",
+    "verified": "আপনার অ্যাকাউন্ট সক্রিয় এবং ভেরিফাইড",
+    "member_since": "সদস্য হয়েছেন",
+    "referral_code": "রেফারেল কোড",
+    "copy_code": "কোড কপি করুন",
+    "copied": "কপি করা হয়েছে",
+    "copied_desc": "রেফারেল কোড ক্লিপবোর্ডে কপি করা হয়েছে",
+    "failed_copy": "কপি করতে ব্যর্থ হয়েছে",
+    "generating": "তৈরি হচ্ছে...",
+    "loading": "লোড হচ্ছে...",
+    "status": {
+      "member": "সদস্য",
+      "admin": "অ্যাডমিন",
+      "area_manager": "এরিয়া ম্যানেজার",
+      "regional_manager": "রিজিওনাল ম্যানেজার",
+      "premium_member": "প্রিমিয়াম সদস্য"
+    }
+  },
+  "nav": {
+    "home": "মূলপাতা",
+    "packages": "প্যাকেজ",
+    "tasks": "টাস্ক",
+    "referral": "রেফারেল",
+    "profile": "প্রোফাইল"
+  },
+  "dashboard": {
+    "account_glance": "আপনার অ্যাকাউন্ট এক নজরে",
+    "growth_desc": "এই মাসে +১২.৫%",
+    "referral_desc": "{{count}} জন সক্রিয় রেফারেল থেকে"
+  }
+}

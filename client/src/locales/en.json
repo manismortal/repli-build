@@ -1,0 +1,41 @@
+{
+  "common": {
+    "welcome": "Welcome back",
+    "balance": "Balance",
+    "available": "Available to invest",
+    "locked": "Locked Balance",
+    "active_investments": "In active investments",
+    "growth": "Total Growth",
+    "referral_bonus": "Referral Bonus",
+    "account_status": "Account Status",
+    "active": "Active",
+    "verified": "Your account is active and verified",
+    "member_since": "Member Since",
+    "referral_code": "Referral Code",
+    "copy_code": "COPY CODE",
+    "copied": "Copied",
+    "copied_desc": "Referral code copied to clipboard",
+    "failed_copy": "Failed to copy",
+    "generating": "Generating...",
+    "loading": "Loading...",
+    "status": {
+      "member": "Member",
+      "admin": "Admin",
+      "area_manager": "Area Manager",
+      "regional_manager": "Regional Manager",
+      "premium_member": "Premium Member"
+    }
+  },
+  "nav": {
+    "home": "Home",
+    "packages": "Packages",
+    "tasks": "Tasks",
+    "referral": "Referral",
+    "profile": "Profile"
+  },
+  "dashboard": {
+    "account_glance": "Your account at a glance",
+    "growth_desc": "+12.5% this month",
+    "referral_desc": "From {{count}} active referrals"
+  }
+}

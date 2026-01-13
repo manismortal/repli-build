@@ -53,8 +53,8 @@ export default function Support() {
         
         {/* Hero Section */}
         <div className="text-center space-y-2 py-4">
-            <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
-                <HeadphonesIcon className="h-10 w-10 text-blue-600" />
+            <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-md p-2">
+                <img src="/avater/service.webp" alt="Support" className="w-full h-full object-contain" />
             </div>
             <h2 className="text-2xl font-bold text-slate-800">{t.heroTitle}</h2>
             <p className="text-slate-500 text-sm px-4">

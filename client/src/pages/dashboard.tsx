@@ -10,18 +10,25 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { UserAvatar } from "@/components/user-avatar";
 import { SuccessStories } from "@/components/success-stories";
+import { OfferModal } from "@/components/offer-modal";
+import { WelcomeFlow } from "@/components/welcome-flow";
+import { EventPopups } from "@/components/event-popups";
+import { useTranslation } from "react-i18next";
+
+import { Footer } from "@/components/footer";
 
 export default function Dashboard() {
   const { user, language } = useAuth();
+  const { t } = useTranslation();
   useReferralValidation(); // Trigger validation
   const { toast } = useToast();
   
   const balance = Number(user?.balance || 0);
-  const lockedBalance = Number(user?.bonusBalance || 0);
+  const lockedBalance = Number(user?.lockedBalance || 0) + Number(user?.bonusBalance || 0);
   const hasPackage = user?.hasPackage || false;
   const name = user?.name || user?.username || "User";
 
-  const referralCode = user?.referralCode || "Generating...";
+  const referralCode = user?.referralCode || t("common.generating");
   const daysAgoStr = user?.createdAt ? formatDistanceToNow(new Date(user.createdAt), { addSuffix: true }) : "recently";
 
   // Fetch Referral Stats
@@ -38,61 +45,46 @@ export default function Dashboard() {
   const activeReferrals = Number(referralStats?.activeReferrals || 0);
 
   const copyReferral = async () => {
-      if (!referralCode || referralCode === "Generating...") return;
+      if (!referralCode || referralCode === t("common.generating")) return;
       try {
         await navigator.clipboard.writeText(referralCode);
         toast({
-            title: language === "bn" ? "কপি করা হয়েছে" : "Copied",
-            description: language === "bn" ? "রেফারেল কোড ক্লিপবোর্ডে কপি করা হয়েছে" : "Referral code copied to clipboard",
+            title: t("common.copied"),
+            description: t("common.copied_desc"),
         });
       } catch (err) {
          toast({
-            title: "Failed to copy",
+            title: t("common.failed_copy"),
             variant: "destructive"
         });
       }
   };
 
   // Status Logic
-  let statusLabel = "Member";
+  let statusLabel = t("common.status.member");
   let statusColor = "bg-red-500 text-white"; // Default Red for normal members
 
   if (user?.role === 'admin') {
-    statusLabel = "Admin";
+    statusLabel = t("common.status.admin");
     statusColor = "bg-purple-600 text-white";
   } else if (user?.role === 'area_manager') {
-    statusLabel = "Area Manager";
+    statusLabel = t("common.status.area_manager");
     statusColor = "bg-blue-600 text-white";
   } else if (user?.role === 'regional_manager') {
-    statusLabel = "Regional Manager";
+    statusLabel = t("common.status.regional_manager");
     statusColor = "bg-indigo-600 text-white";
   } else if (hasPackage) {
-    statusLabel = "Premium Member";
+    statusLabel = t("common.status.premium_member");
     statusColor = "bg-yellow-500 text-black";
   }
 
-  const t = {
-    welcome: language === "bn" ? `আবার স্বাগতম,` : `Welcome back,`,
-    sub: language === "bn" ? "আপনার অ্যাকাউন্ট এক নজরে" : "Your account at a glance",
-    balance: language === "bn" ? "ব্যালেন্স" : "Balance",
-    available: language === "bn" ? "বিনিয়োগের জন্য উপলব্ধ" : "Available to invest",
-    locked: language === "bn" ? "লক করা ব্যালেন্স" : "Locked Balance",
-    activeInv: language === "bn" ? "সক্রিয় বিনিয়োগে" : "In active investments",
-    growth: language === "bn" ? "মোট বৃদ্ধি" : "Total Growth",
-    thisMonth: language === "bn" ? "এই মাসে +১২.৫%" : "+12.5% this month",
-    referral: language === "bn" ? "রেফারেল বোনাস" : "Referral Bonus",
-    status: language === "bn" ? "অ্যাকাউন্টের অবস্থা" : "Account Status",
-    active: language === "bn" ? "সক্রিয়" : "Active",
-    verified: language === "bn" ? "আপনার অ্যাকাউন্ট সক্রিয় এবং ভেরিফাইড" : "Your account is active and verified",
-    memberSince: language === "bn" ? "সদস্য হয়েছেন" : "Member Since",
-    daysAgo: language === "bn" ? daysAgoStr : daysAgoStr,
-    refCode: language === "bn" ? "রেফারেল কোড" : "Referral Code",
-    copy: language === "bn" ? "কোড কপি করুন" : "COPY CODE",
-  };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-20">
       <NotificationPopup />
+      <OfferModal />
+      <WelcomeFlow />
+      <EventPopups />
       {/* Premium Welcome Section */}
       <div className="relative overflow-hidden bg-slate-900 rounded-[2.5rem] p-6 text-white shadow-2xl">
         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl -mr-16 -mt-16" />
@@ -105,7 +97,7 @@ export default function Dashboard() {
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-slate-400 text-sm font-medium">{t.welcome}</span>
+              <span className="text-slate-400 text-sm font-medium">{t("common.welcome")},</span>
               <Badge variant="outline" className={`border-none text-[10px] h-5 px-2 font-bold ${statusColor}`}>
                 {statusLabel.toUpperCase()}
               </Badge>
@@ -123,47 +115,45 @@ export default function Dashboard() {
         <Card className="hover-elevate">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-muted-foreground text-sm font-medium">{t.balance}</span>
+              <span className="text-muted-foreground text-sm font-medium">{t("common.balance")}</span>
               <Wallet className="h-4 w-4 text-primary" />
             </div>
             <p className="text-3xl font-bold font-heading">৳{balance.toFixed(2)}</p>
-            <p className="text-xs text-muted-foreground mt-1">{t.available}</p>
+            <p className="text-xs text-muted-foreground mt-1">{t("common.available")}</p>
           </CardContent>
         </Card>
 
         <Card className="hover-elevate">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-muted-foreground text-sm font-medium">{t.locked}</span>
+              <span className="text-muted-foreground text-sm font-medium">{t("common.locked")}</span>
               <Lock className="h-4 w-4 text-accent" />
             </div>
             <p className="text-3xl font-bold font-heading">৳{lockedBalance.toFixed(2)}</p>
-            <p className="text-xs text-muted-foreground mt-1">{t.activeInv}</p>
+            <p className="text-xs text-muted-foreground mt-1">{t("common.active_investments")}</p>
           </CardContent>
         </Card>
 
         <Card className="hover-elevate">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-muted-foreground text-sm font-medium">{t.growth}</span>
+              <span className="text-muted-foreground text-sm font-medium">{t("common.growth")}</span>
               <TrendingUp className="h-4 w-4 text-green-600" />
             </div>
             <p className="text-3xl font-bold font-heading">৳{(balance + lockedBalance).toFixed(2)}</p>
-            <p className="text-xs text-green-600 mt-1">{t.thisMonth}</p>
+            <p className="text-xs text-green-600 mt-1">{t("dashboard.growth_desc")}</p>
           </CardContent>
         </Card>
 
         <Card className="hover-elevate">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-muted-foreground text-sm font-medium">{t.referral}</span>
+              <span className="text-muted-foreground text-sm font-medium">{t("common.referral_bonus")}</span>
               <Users className="h-4 w-4 text-purple-600" />
             </div>
             <p className="text-3xl font-bold font-heading">৳{totalEarned.toLocaleString()}</p>
             <p className="text-xs text-muted-foreground mt-1">
-              {language === "bn" 
-                ? `${activeReferrals} জন সক্রিয় রেফারেল থেকে` 
-                : `From ${activeReferrals} active referrals`}
+              {t("dashboard.referral_desc", { count: activeReferrals })}
             </p>
           </CardContent>
         </Card>
@@ -172,20 +162,20 @@ export default function Dashboard() {
       {/* Account Status */}
       <Card className="hover-elevate">
         <CardHeader>
-          <CardTitle className="font-heading text-2xl">{t.status}</CardTitle>
+          <CardTitle className="font-heading text-2xl">{t("common.account_status")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between p-4 bg-secondary/50 rounded-lg border">
             <div>
-              <p className="font-semibold text-sm">{t.status}</p>
-              <p className="text-xs text-muted-foreground">{t.verified}</p>
+              <p className="font-semibold text-sm">{t("common.account_status")}</p>
+              <p className="text-xs text-muted-foreground">{t("common.verified")}</p>
             </div>
-            <Badge className="bg-green-600 text-white">{t.active}</Badge>
+            <Badge className="bg-green-600 text-white">{t("common.active")}</Badge>
           </div>
           <div className="flex items-center justify-between p-4 bg-secondary/50 rounded-lg border">
             <div>
-              <p className="font-semibold text-sm">{t.memberSince}</p>
-              <p className="text-xs text-muted-foreground">{t.daysAgo}</p>
+              <p className="font-semibold text-sm">{t("common.member_since")}</p>
+              <p className="text-xs text-muted-foreground">{daysAgoStr}</p>
             </div>
             <Badge variant="outline">VERIFIED</Badge>
           </div>
@@ -194,6 +184,9 @@ export default function Dashboard() {
 
       {/* Success Stories (Replacing Balance Chart) */}
       <SuccessStories />
+
+      {/* Corporate Footer */}
+      <Footer />
     </div>
   );
 }

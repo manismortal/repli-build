@@ -1,0 +1,32 @@
+{
+  "report_type": "dev",
+  "status": "success",
+  "timestamp": "2026-01-08T15:30:00Z",
+  "changes": [
+    {
+      "module": "Referral System",
+      "description": "Overhauled to a single-level 40% commission model. Added minimum 3 active referral requirement for withdrawals from referral balance. Implemented stepwise (1-3) progress UI."
+    },
+    {
+      "module": "Profit Distribution",
+      "description": "Reduced profit lock cycle from 60 to 30 days. Daily profits from tasks now credit to a locked wallet. Added 'Claim' functionality for locked funds post-cycle."
+    },
+    {
+      "module": "Wallet & Withdrawals",
+      "description": "Added 'lockedBalance' and 'referralBalance' fields. Rearchitected withdrawals to remove persistent wallet numbers; destination numbers are now provided per request. Added source selection (Main/Referral)."
+    },
+    {
+      "module": "Packages",
+      "description": "Added 'dailyReward' to package schema to enable dynamic task profit calculation."
+    },
+    {
+      "module": "UI/UX",
+      "description": "Redesigned Team page as 'Referral Hub'. Added 'Referral' tab to bottom navigation. Enhanced payment method selection with prominent branding and icons."
+    }
+  ],
+  "metrics": {
+    "files_modified": 10,
+    "new_features": 4,
+    "ui_refactors": 5
+  }
+}

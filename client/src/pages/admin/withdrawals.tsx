@@ -33,6 +33,13 @@ export default function AdminWithdrawals() {
     }
   });
 
+  const handleExport = (method?: string) => {
+      const url = method 
+        ? `/api/admin/withdrawals/export?method=${method}`
+        : `/api/admin/withdrawals/export`;
+      window.location.href = url;
+  };
+
   const columns = [
     {
       header: "User",
@@ -40,17 +47,31 @@ export default function AdminWithdrawals() {
       className: "font-bold text-slate-700"
     },
     {
-      header: "Amount",
-      accessor: (w: any) => <span className="font-mono font-bold text-red-600">৳{Number(w.amount).toLocaleString()}</span>
+      header: "Method",
+      accessor: (w: any) => (
+        <Badge variant="outline" className="uppercase text-xs font-bold">
+          {w.method}
+        </Badge>
+      )
     },
     {
-      header: "Wallet ID",
+      header: "Details",
       accessor: (w: any) => (
-        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-          <Wallet className="h-3 w-3" />
-          <span className="font-mono truncate w-24">{w.walletId}</span>
+        <div className="flex flex-col text-xs">
+            <span className="font-bold">Amt: ৳{Number(w.amount).toLocaleString()}</span>
+            <span className="text-red-500">Fee: -৳{Number(w.fee).toLocaleString()}</span>
+            <span className="text-green-600 font-bold border-t border-dashed border-green-200 mt-1 pt-1">Net: ৳{Number(w.finalAmount).toLocaleString()}</span>
         </div>
-      ),
+      )
+    },
+    {
+      header: "Dest. Number",
+      accessor: (w: any) => <span className="font-mono text-xs">{w.destinationNumber}</span>,
+      className: "hidden md:table-cell"
+    },
+    {
+      header: "Source",
+      accessor: (w: any) => <Badge variant="secondary" className="uppercase text-[10px]">{w.source}</Badge>,
       className: "hidden md:table-cell"
     },
     {
@@ -102,9 +123,25 @@ export default function AdminWithdrawals() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-heading font-bold">Withdrawal Requests</h1>
-        <p className="text-muted-foreground">Manage payout approvals and rejections.</p>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+            <h1 className="text-3xl font-heading font-bold">Withdrawal Requests</h1>
+            <p className="text-muted-foreground">Manage payout approvals and rejections.</p>
+        </div>
+        <div className="flex gap-2 flex-wrap">
+            <Button variant="outline" size="sm" onClick={() => handleExport()}>
+                Export All
+            </Button>
+            <Button variant="outline" size="sm" className="text-pink-600 border-pink-200 hover:bg-pink-50" onClick={() => handleExport('bkash')}>
+                Export bKash
+            </Button>
+            <Button variant="outline" size="sm" className="text-orange-600 border-orange-200 hover:bg-orange-50" onClick={() => handleExport('nagad')}>
+                Export Nagad
+            </Button>
+            <Button variant="outline" size="sm" className="text-yellow-600 border-yellow-200 hover:bg-yellow-50" onClick={() => handleExport('binance')}>
+                Export Binance
+            </Button>
+        </div>
       </div>
 
       <AdminTable 

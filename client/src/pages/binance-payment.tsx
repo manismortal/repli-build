@@ -3,15 +3,25 @@ import { useLocation, Link } from "wouter";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ChevronLeft, Home, Copy, CheckCircle, Wallet, Hash, Bitcoin } from "lucide-react";
+import { ChevronLeft, Home, Copy, CheckCircle, Wallet, Hash, Bitcoin, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { AgentNumberDisplay } from "@/components/agent-number-display";
+import { usePaymentSession } from "@/hooks/use-payment-session";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 export default function BinancePayment() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { language } = useAuth();
+  const queryClient = useQueryClient();
+  const { timeLeft, formatTime } = usePaymentSession(50);
   
   // Binance Flow
   const [amount, setAmount] = useState("");
@@ -21,7 +31,7 @@ export default function BinancePayment() {
   const [showSuccess, setShowSuccess] = useState(false);
 
   // Fetch Active Agent (Wallet Address)
-  const { data: agentData, isLoading: agentLoading } = useQuery({
+  const { data: agentData, isLoading: agentLoading } = useQuery<any>({
     queryKey: ["/api/agents/binance"],
   });
 
@@ -90,7 +100,7 @@ export default function BinancePayment() {
     backHome: language === "bn" ? "হোমে ফিরে যান" : "BACK TO HOME",
     viewTerms: language === "bn" ? "শর্তাবলী দেখুন" : "View Terms & Conditions",
     sendMoney: language === "bn" ? "এই ঠিকানায় USDT পাঠান (TRC20)" : "Send USDT to this Address (TRC20)",
-    walletLabel: language === "bn" ? "ওয়ালেট অ্যাড্রেস" : "Wallet Address",
+    walletLabel: language === "bn" ? "ওয়ালেট অ্যাড্রেস (TRC20)" : "Wallet Address (TRC20)",
     userWalletLabel: language === "bn" ? "আপনার ওয়ালেট অ্যাড্রেস" : "Your Wallet Address",
     selectAmount: language === "bn" ? "পরিমাণ নির্বাচন করুন (BDT)" : "Select Amount (BDT)",
     custom: language === "bn" ? "অন্যান্য" : "Custom",
@@ -99,7 +109,8 @@ export default function BinancePayment() {
     proceed: language === "bn" ? "এগিয়ে যান" : "PROCEED",
     processing: language === "bn" ? "প্রক্রিয়াধীন..." : "PROCESSING...",
     rate: language === "bn" ? "১ USDT = ১২০ টাকা" : "1 USDT = 120 BDT", 
-    unavailable: language === "bn" ? "বর্তমানে কোনো ওয়ালেট অ্যাড্রেস উপলব্ধ নেই" : "No wallet address available"
+    unavailable: language === "bn" ? "বর্তমানে কোনো ওয়ালেট অ্যাড্রেস উপলব্ধ নেই" : "No wallet address available",
+    guideTitle: language === "bn" ? "কিভাবে ডিপোজিট করবেন?" : "How to Deposit?",
   };
 
   if (showSuccess) {
@@ -145,10 +156,15 @@ export default function BinancePayment() {
             <span className="text-[10px] opacity-60 uppercase tracking-tighter">{t.subtitle}</span>
           </div>
         </div>
-        <div className="bg-white/10 p-2 rounded-full text-[#FCD535]">
-          <Link href="/dashboard">
-            <Home className="h-5 w-5" />
-          </Link>
+        <div className="flex items-center gap-2">
+            <div className={`text-xs font-mono font-bold px-2 py-1 rounded bg-white/10 ${timeLeft < 30 ? 'text-red-400 animate-pulse' : 'text-[#FCD535]'}`}>
+                {formatTime(timeLeft)}
+            </div>
+            <div className="bg-white/10 p-2 rounded-full text-[#FCD535]">
+            <Link href="/dashboard">
+                <Home className="h-5 w-5" />
+            </Link>
+            </div>
         </div>
       </header>
 
@@ -168,23 +184,53 @@ export default function BinancePayment() {
             </div>
             
             <div className="bg-[#1E2329] border border-dashed border-white/20 rounded-xl p-3 flex items-center justify-between">
-                <div className="flex flex-col overflow-hidden mr-2">
-                    <span className="text-[10px] text-gray-500 font-bold uppercase mb-1">{t.walletLabel}</span>
-                    <span className="text-xs font-mono text-[#FCD535] truncate">
-                        {agentLoading ? "Loading..." : agentData?.number || t.unavailable}
-                    </span>
+                <div className="flex flex-col overflow-hidden w-full">
+                    {agentLoading ? (
+                        <div className="h-10 bg-white/5 rounded animate-pulse w-full"></div>
+                    ) : agentData ? (
+                        <div className="w-full">
+                             <div className="text-[10px] text-gray-500 font-bold uppercase mb-1">{t.walletLabel}</div>
+                             <AgentNumberDisplay 
+                                number={agentData.number}
+                                onRefresh={async () => {
+                                    try {
+                                        await apiRequest("POST", "/api/agents/binance/rotate");
+                                        queryClient.invalidateQueries({ queryKey: ["/api/agents/binance"] });
+                                    } catch (e) {
+                                        console.error(e);
+                                    }
+                                }}
+                                label="" // Label handled outside or suppress inside
+                                autoRefreshInterval={5000}
+                             />
+                        </div>
+                    ) : (
+                        <span className="text-xs text-red-400">{t.unavailable}</span>
+                    )}
                 </div>
-                
-                <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    onClick={handleCopy}
-                    className="text-[#FCD535] hover:bg-[#FCD535]/10 h-8 w-8 p-0 rounded-full shrink-0"
-                    disabled={!agentData}
-                >
-                    <Copy className="h-4 w-4" />
-                </Button>
             </div>
+        </div>
+
+        {/* Guidelines Accordion */}
+        <div className="bg-[#2B3139] rounded-2xl shadow-sm border border-white/5 overflow-hidden">
+            <Accordion type="single" collapsible>
+                <AccordionItem value="item-1" className="border-b-0">
+                    <AccordionTrigger className="px-4 py-3 hover:bg-white/5 hover:no-underline">
+                        <div className="flex items-center gap-2 text-[#FCD535]">
+                            <Info className="h-4 w-4" />
+                            <span className="text-sm font-bold">{t.guideTitle}</span>
+                        </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-4 pb-4 bg-[#1E2329]">
+                        <ul className="space-y-2 text-xs text-gray-400 list-disc pl-4">
+                            <li><strong>নেটওয়ার্ক:</strong> আপনার ওয়ালেট থেকে USDT সিলেক্ট করুন এবং নেটওয়ার্ক হিসেবে <strong>TRC20</strong> নিশ্চিত করুন।</li>
+                            <li><strong>অ্যাড্রেস:</strong> উপরে দেওয়া অ্যাড্রেসটি কপি করুন।</li>
+                            <li><strong>পরিমাণ:</strong> নিচে তালিকা থেকে BDT পরিমাণ নির্বাচন করুন। এটি আপনার সিস্টেম ব্যালেন্স হিসেবে যুক্ত হবে।</li>
+                            <li><strong>TxID:</strong> সফলভাবে সেন্ড করার পর ট্রানজেকশন হ্যাশ (TxID) কপি করে নিচের বক্সে দিন।</li>
+                        </ul>
+                    </AccordionContent>
+                </AccordionItem>
+            </Accordion>
         </div>
 
         {/* Amount Selection */}

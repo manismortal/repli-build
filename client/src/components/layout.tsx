@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { 
   LayoutDashboard, 
@@ -11,7 +12,9 @@ import {
   Package,
   ShieldCheck,
   HeadphonesIcon,
-  CheckSquare
+  CheckSquare,
+  Users,
+  Info
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,16 +24,28 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout, language, setLanguage } = useAuth();
+  const { t } = useTranslation();
   const [location] = useLocation();
+  
+  const { data: notifications = [] } = useQuery({
+    queryKey: ["notifications"],
+    queryFn: async () => {
+      const res = await fetch("/api/notifications");
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!user,
+  });
 
-  if (!user) return <div className="min-h-screen bg-secondary/30">{children}</div>;
+  const unreadCount = Array.isArray(notifications) ? notifications.filter((n: any) => !n.isRead).length : 0;
 
-  const NavItem = ({ href, icon: Icon, label, labelBn }: { href: string; icon: any; label: string; labelBn: string }) => {
+  const NavItem = ({ href, icon: Icon, labelKey }: { href: string; icon: any; labelKey: string }) => {
     const isActive = location === href || (href === "/profile" && ["/wallet", "/settings", "/team"].includes(location));
-    const displayLabel = language === "bn" ? labelBn : label;
+    const displayLabel = t(labelKey);
     
     return (
       <Link href={href}>
@@ -65,23 +80,41 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   };
 
   const navigation = [
-    { href: "/dashboard", icon: LayoutDashboard, label: "Home", labelBn: "মূলপাতা" },
-    { href: "/products", icon: Package, label: "Packages", labelBn: "প্যাকেজ" },
-    { href: "/tasks", icon: CheckSquare, label: "Tasks", labelBn: "টাস্ক" },
-    { href: "/profile", icon: User, label: "Profile", labelBn: "প্রোফাইল" },
+    { href: "/dashboard", icon: LayoutDashboard, labelKey: "nav.home" },
+    { href: "/products", icon: Package, labelKey: "nav.packages" },
+    { href: "/tasks", icon: CheckSquare, labelKey: "nav.tasks" },
+    { href: "/team", icon: Users, labelKey: "nav.referral" },
+    { href: "/profile", icon: User, labelKey: "nav.profile" },
   ];
 
   return (
     <div className="min-h-screen bg-[#f8fafc] flex flex-col font-sans">
       {/* Top Header */}
       <header className="h-16 border-b bg-card/80 backdrop-blur-md flex items-center justify-between px-6 sticky top-0 z-50">
-        <div className="flex items-center gap-2">
-          <div className="bg-primary/10 p-1.5 rounded-lg">
-            <Ship className="h-5 w-5 text-primary" />
+        <Link href="/dashboard">
+          <div className="flex items-center gap-2 cursor-pointer">
+            <div className="bg-primary/10 p-1.5 rounded-lg">
+              <Ship className="h-5 w-5 text-primary" />
+            </div>
+            <span className="font-heading font-bold text-lg tracking-tight">MAERSK.LINE</span>
           </div>
-          <span className="font-heading font-bold text-lg tracking-tight">MAERSK.LINE</span>
-        </div>
-        <div className="flex items-center gap-3">
+        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/notifications">
+            <Button variant="ghost" size="icon" className="text-muted-foreground h-9 w-9 rounded-xl hover:bg-secondary relative">
+              <Bell className="h-5 w-5" />
+              {unreadCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 h-2 w-2 bg-red-500 rounded-full ring-2 ring-white animate-pulse" />
+              )}
+            </Button>
+          </Link>
+
+          <Link href="/about">
+            <Button variant="ghost" size="icon" className="text-muted-foreground h-9 w-9 rounded-xl hover:bg-secondary">
+              <Info className="h-5 w-5" />
+            </Button>
+          </Link>
+          
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="text-muted-foreground h-9 w-9 rounded-xl">
@@ -96,7 +129,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
           <div className="flex flex-col items-end px-3 py-1 bg-secondary/50 rounded-xl border">
             <span className="text-[9px] font-bold text-muted-foreground uppercase leading-tight">
-              {language === "bn" ? "ব্যালেন্স" : "Balance"}
+              {t("common.balance")}
             </span>
             <span className="text-sm font-bold text-primary">৳{Number(user?.balance || 0).toLocaleString()}</span>
           </div>
