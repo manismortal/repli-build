@@ -1,6 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { type Server } from "http";
 import session from "express-session";
+import createMemoryStore from "memorystore";
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import bcrypt from "bcrypt";
@@ -13,6 +14,7 @@ import { agentService } from "./services/agent";
 import { notificationService } from "./services/notification";
 import { broadcastAgentUpdate } from "./ws";
 
+const MemoryStore = createMemoryStore(session);
 const saltRounds = 10;
 
 const loginLimiter = rateLimit({
@@ -131,10 +133,11 @@ export async function registerRoutes(
   await seedPackages();
 
   // Session middleware
-  // In a production app, you'd want to use a persistent session store
-  // like connect-pg-simple instead of the default MemoryStore.
   app.use(
     session({
+      store: new MemoryStore({
+        checkPeriod: 86400000 // prune expired entries every 24h
+      }),
       secret: process.env.SESSION_SECRET || "a-very-secret-secret-key", // Use an environment variable for this
       resave: false,
       saveUninitialized: false,

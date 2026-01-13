@@ -7,6 +7,7 @@ import fs from "fs";
 import path from "path";
 
 const app = express();
+app.set("trust proxy", 1); // Trust first proxy (Render)
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
