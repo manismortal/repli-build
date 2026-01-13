@@ -1,9 +1,10 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { createServer } from "http";
 import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
 import { agentService } from "./services/agent";
 import { setupWebSocket } from "./ws";
+import fs from "fs";
+import path from "path";
 
 const app = express();
 app.use(express.json());
@@ -16,6 +17,33 @@ setInterval(() => {
 
 const httpServer = createServer(app);
 setupWebSocket(httpServer);
+
+function log(message: string, source = "express") {
+  const formattedTime = new Date().toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+  });
+
+  console.log(`${formattedTime} [${source}] ${message}`);
+}
+
+function serveStatic(app: express.Express) {
+  const distPath = path.resolve(process.cwd(), "dist", "public");
+
+  if (!fs.existsSync(distPath)) {
+    throw new Error(
+      `Could not find the build directory: ${distPath}, make sure to build the client first`,
+    );
+  }
+
+  app.use(express.static(distPath));
+
+  app.use("*", (_req, res) => {
+    res.sendFile(path.resolve(distPath, "index.html"));
+  });
+}
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -64,6 +92,7 @@ app.use((req, res, next) => {
   if (app.get("env") === "production") {
     serveStatic(app);
   } else {
+    const { setupVite } = await import("./vite");
     await setupVite(httpServer, app);
   }
 

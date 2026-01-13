@@ -10,7 +10,7 @@
     "dev:client": "vite dev --port 5000",
     "dev": "NODE_ENV=development tsx server/index.ts",
     "build": "tsx script/build.ts",
-    "start": "NODE_ENV=production node dist/index.js",
+    "start": "NODE_ENV=production node dist/index.cjs",
     "check": "tsc",
     "test": "tsx server/test/agent.test.ts && tsx server/test/agent-service.test.ts && tsx server/test/withdraw_flow.test.ts",
     "db:push": "drizzle-kit push"
