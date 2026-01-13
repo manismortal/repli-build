@@ -2,30 +2,41 @@
 
 This project is configured with a GitHub Actions workflow for Continuous Integration and Continuous Deployment (CI/CD).
 
-## 1. Create a Repository on GitHub
+## 1. Create Repository & Push
+
+### Option 1: Easy Mode (GitHub CLI)
+If you have the `gh` CLI installed, run these two commands in your terminal:
+
+1.  **Log in** (skip if already logged in):
+    ```bash
+    gh auth login
+    ```
+2.  **Create and Push**:
+    ```bash
+    gh repo create repli-build --private --source=. --remote=origin --push
+    ```
+
+### Option 2: Manual Mode (Web Browser)
 
 1.  Log in to your GitHub account.
 2.  Click the **+** icon in the top right and select **New repository**.
-3.  Name your repository (e.g., `maersk-app`).
+3.  Name your repository (e.g., `repli-build`).
 4.  Do **not** check "Initialize with README", ".gitignore", or "License" (we already have these).
 5.  Click **Create repository**.
+6.  Run the following commands in your terminal (replace `<your-username>` with your actual GitHub username):
 
-## 2. Push Your Code
+    ```bash
+    # Add the remote repository
+    git remote add origin https://github.com/<your-username>/repli-build.git
 
-Run the following commands in your terminal (replace `<your-username>` with your actual GitHub username):
+    # Rename main branch to 'main' if it isn't already
+    git branch -M main
 
-```bash
-# Add the remote repository
-git remote add origin https://github.com/<your-username>/maersk-app.git
+    # Push the code
+    git push -u origin main
+    ```
 
-# Rename main branch to 'main' if it isn't already
-git branch -M main
-
-# Push the code
-git push -u origin main
-```
-
-## 3. Configure GitHub Secrets
+## 2. Configure GitHub Secrets
 
 For the CI/CD pipeline to deploy successfully (or to run tests that might eventually need real credentials), you need to configure secrets in GitHub.
 

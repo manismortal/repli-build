@@ -574,7 +574,7 @@ export class MemStorage implements IStorage {
   }
 
   async markAllNotificationsRead(userId: string): Promise<void> {
-      for (const n of this.notifications.values()) {
+      for (const n of Array.from(this.notifications.values())) {
           if (n.userId === userId && !n.isRead) {
               this.notifications.set(n.id, { ...n, isRead: true });
           }
