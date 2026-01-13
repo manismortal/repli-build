@@ -4,12 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Wallet, ArrowDownLeft, ArrowUpRight, History, CreditCard, Banknote } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { format } from "date-fns";
+import { Badge } from "@/components/ui/badge";
 
 export default function WalletPage() {
-  const { user, language, updateBalance } = useAuth(); // ensure updateBalance is available if needed, or queryClient invalidation
+  const { user, language } = useAuth();
   const { toast } = useToast();
-  // We can use queryClient to invalidate user query after claim
   const queryClient = useQueryClient();
 
   const balance = Number(user?.balance || 0);
@@ -18,6 +19,41 @@ export default function WalletPage() {
   const referralBalance = Number(user?.referralBalance || 0);
   
   const totalLocked = bonusBalance + lockedBalance;
+
+  // Fetch Deposits
+  const { data: deposits = [] } = useQuery<any[]>({
+    queryKey: ["/api/deposits"],
+  });
+
+  // Fetch Withdrawals
+  const { data: withdrawals = [] } = useQuery<any[]>({
+    queryKey: ["/api/withdrawals"],
+    queryFn: async () => {
+        const res = await fetch("/api/withdrawals");
+        if (!res.ok) return [];
+        return res.json();
+    }
+  });
+
+  // Combine and Sort Transactions
+  const transactions = [
+    ...deposits.map(d => ({
+        id: d.id,
+        type: 'deposit',
+        amount: d.amount,
+        status: d.status,
+        date: d.createdAt,
+        method: d.method
+    })),
+    ...withdrawals.map(w => ({
+        id: w.id,
+        type: 'withdrawal',
+        amount: w.amount,
+        status: w.status,
+        date: w.requestedAt,
+        method: w.method
+    }))
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const handleClaim = async () => {
       try {
@@ -31,8 +67,7 @@ export default function WalletPage() {
                   title: "Success",
                   description: data.message,
               });
-              // Refresh user data
-              queryClient.invalidateQueries({ queryKey: ["user", "me"] });
+              queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
           } else {
               toast({
                   title: "Claim Failed",
@@ -63,7 +98,10 @@ export default function WalletPage() {
     cycle: language === "bn" ? "সাইকেলে আছে" : "IN CYCLE",
     recent: language === "bn" ? "সাম্প্রতিক লেনদেন" : "Recent Transactions",
     taskReward: language === "bn" ? "দৈনিক টাস্ক রিওয়ার্ড" : "Daily Task Reward",
-    today: language === "bn" ? "আজ, ২:৪৫ PM" : "Today, 2:45 PM",
+    today: language === "bn" ? "আজ" : "Today",
+    noTransactions: language === "bn" ? "কোন লেনদেন পাওয়া যায়নি" : "No transactions found",
+    depositType: language === "bn" ? "ডিপোজিট" : "Deposit",
+    withdrawType: language === "bn" ? "উত্তোলন" : "Withdrawal",
   };
 
   return (
@@ -117,7 +155,6 @@ export default function WalletPage() {
                     <p className="text-2xl font-bold font-heading">৳{referralBalance.toLocaleString()}</p>
                     <p className="text-[10px] text-purple-600 font-medium mt-1">{t.referralSub}</p>
                 </div>
-                 {/* Optional: Add separate withdraw button for referral here or direct to withdraw page */}
             </div>
           </CardContent>
         </Card>
@@ -152,21 +189,40 @@ export default function WalletPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="px-0 space-y-3">
-          {/* Mock data - ideally fetch transactions */}
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="flex items-center justify-between p-4 bg-card rounded-2xl border border-border/50">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-secondary flex items-center justify-center">
-                  <ArrowDownLeft className="h-5 w-5 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold">{t.taskReward}</p>
-                  <p className="text-[10px] text-muted-foreground">{t.today}</p>
-                </div>
-              </div>
-              <p className="font-bold text-green-600">+৳50</p>
+          {transactions.length === 0 ? (
+            <div className="text-center py-10 text-muted-foreground italic">
+                {t.noTransactions}
             </div>
-          ))}
+          ) : (
+            transactions.slice(0, 10).map((tx) => (
+              <div key={tx.id} className="flex items-center justify-between p-4 bg-card rounded-2xl border border-border/50">
+                <div className="flex items-center gap-3">
+                  <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${tx.type === 'deposit' ? 'bg-green-50' : 'bg-red-50'}`}>
+                    {tx.type === 'deposit' ? (
+                        <ArrowDownLeft className="h-5 w-5 text-green-600" />
+                    ) : (
+                        <ArrowUpRight className="h-5 w-5 text-red-600" />
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold">
+                        {tx.type === 'deposit' ? t.depositType : t.withdrawType} 
+                        <span className="text-[10px] text-muted-foreground ml-2 font-normal uppercase">({tx.method})</span>
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                        {format(new Date(tx.date), "MMM dd, yyyy • hh:mm a")}
+                        <Badge variant="outline" className="ml-2 text-[8px] h-4 uppercase border-primary/20 text-primary">
+                            {tx.status}
+                        </Badge>
+                    </p>
+                  </div>
+                </div>
+                <p className={`font-bold ${tx.type === 'deposit' ? 'text-green-600' : 'text-red-600'}`}>
+                    {tx.type === 'deposit' ? '+' : '-'}৳{parseFloat(tx.amount).toLocaleString()}
+                </p>
+              </div>
+            ))
+          )}
         </CardContent>
       </Card>
     </div>
