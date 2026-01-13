@@ -2,6 +2,7 @@ services:
   - type: web
     name: maersk-app
     env: node
+    plan: free
     buildCommand: npm run build
     startCommand: npm start
     envVars:
@@ -20,4 +21,4 @@ databases:
   - name: maersk-db
     databaseName: maersk
     user: maersk_user
-    plan: free # Optional: defaults to starter/free depending on account
+    plan: free
