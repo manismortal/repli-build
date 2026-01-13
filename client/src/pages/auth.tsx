@@ -2,6 +2,7 @@ import { useAuth } from "@/lib/auth";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
@@ -118,7 +119,7 @@ export default function AuthPage() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="password">Password</Label>
-                      <Input id="password" name="password" type="password" required />
+                      <PasswordInput id="password" name="password" required />
                     </div>
                     <Button type="submit" className="w-full h-12 text-lg font-heading" disabled={isLoading}>
                       {isLoading ? "Authenticating..." : "Login to Dashboard"}
@@ -146,7 +147,7 @@ export default function AuthPage() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="reg-pass">Password</Label>
-                      <Input id="reg-pass" name="password" type="password" required />
+                      <PasswordInput id="reg-pass" name="password" required />
                     </div>
                     
                     <div className="space-y-2">
