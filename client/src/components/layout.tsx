@@ -100,6 +100,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </Link>
         <div className="flex items-center gap-2">
+          {user?.isAdmin && (
+            <Link href="/admin">
+              <Button variant="ghost" size="icon" className="text-purple-600 bg-purple-50 h-9 w-9 rounded-xl hover:bg-purple-100 mr-1">
+                <ShieldCheck className="h-5 w-5" />
+              </Button>
+            </Link>
+          )}
           <Link href="/notifications">
             <Button variant="ghost" size="icon" className="text-muted-foreground h-9 w-9 rounded-xl hover:bg-secondary relative">
               <Bell className="h-5 w-5" />
