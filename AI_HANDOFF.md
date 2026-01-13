@@ -2,7 +2,7 @@
 
 **Project Name:** MAERSK.Line BD (Maritime Investment Platform)
 **Status:** Production Ready / Deployment Ready
-**Last Updated:** January 12, 2026
+**Last Updated:** January 13, 2026 (Part 2)
 
 ## 1. Project Overview
 This is a full-stack investment platform web application designed for mobile users (responsive UI). It allows users to register, purchase shipping packages, complete daily video tasks for rewards, and manage a wallet with simulated bKash/Nagad/Binance deposits and withdrawals.
@@ -190,3 +190,21 @@ This is a full-stack investment platform web application designed for mobile use
 *   **CI/CD Pipeline:**
     *   Created `.github/workflows/ci-cd.yml` for automated testing and building on push.
     *   Added `GITHUB_SETUP.md` with detailed instructions for repository creation and secret management.
+
+## 14. Updates (Jan 13, 2026 - Part 2) - Critical Fixes & UX Enhancements
+
+### **A. Critical Bug Fixes (Withdraw Page)**
+*   **White Screen Error:** Resolved a crash on the Withdraw page caused by missing `Tabs`, `TabsList`, and `TabsTrigger` imports in `client/src/pages/withdraw.tsx`.
+*   **Build Integrity:** Fixed TypeScript errors in `server/storage.ts` (iterator handling) and `client/src/components/ui/dialog.tsx` (missing props), ensuring a clean `npx tsc --noEmit`.
+
+### **B. Wallet & Transaction History**
+*   **Real Data Integration:** Replaced mock transaction data on the Wallet page (`/wallet`) with real-time data fetched from the backend.
+*   **Data Aggregation:** Implemented logic to merge and sort data from `/api/deposits` and `/api/withdrawals` to show a unified transaction history sorted by date.
+*   **UI Polish:** Added status badges (Approved/Pending/Rejected) and localized text for transaction types.
+
+### **C. Authentication UX**
+*   **Password Visibility:** Added a "Show/Hide" eye icon toggle to password fields in both Login and Registration forms.
+*   **Reusable Component:** Created a new `PasswordInput` component (`client/src/components/ui/password-input.tsx`) to encapsulate this logic for reusability and maintainability.
+
+### **D. Deployment Status**
+*   **Current State:** The codebase is fully updated, tested, and ready for deployment. All recent changes have been pushed to the `main` branch.
