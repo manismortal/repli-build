@@ -22,13 +22,16 @@ export default function Withdraw() {
   const [, setLocation] = useLocation();
   const { user, language } = useAuth();
   const { toast } = useToast();
-  const [method, setMethod] = useState<'bkash' | 'nagad' | 'binance'>('bkash');
+  // Initialize from saved wallet if available
+  const [method, setMethod] = useState<'bkash' | 'nagad' | 'binance'>((user?.savedWalletProvider as any) || 'bkash');
   const [step, setStep] = useState(1);
   const [amount, setAmount] = useState("");
-  const [destinationNumber, setDestinationNumber] = useState("");
+  const [destinationNumber, setDestinationNumber] = useState(user?.savedWalletNumber || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   
+  const isUsingSaved = user?.savedWalletNumber === destinationNumber && user?.savedWalletProvider === method;
+
   // Read query params
   const searchParams = new URLSearchParams(window.location.search);
   const defaultSource = searchParams.get("source") === "referral" ? "referral" : "main";
@@ -60,6 +63,7 @@ export default function Withdraw() {
     backHome: language === "bn" ? "হোমে ফিরে যান" : "BACK TO HOME",
     fee: language === "bn" ? "ফি" : "Fee",
     final: language === "bn" ? "আপনি পাবেন" : "You Receive",
+    verified: language === "bn" ? "যাচাইকৃত" : "Verified",
   };
 
   const handleWithdrawClick = () => {
@@ -221,7 +225,14 @@ export default function Withdraw() {
 
             {/* Destination Number */}
             <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700">{t.destLabel}</label>
+                <div className="flex justify-between">
+                    <label className="text-sm font-bold text-gray-700">{t.destLabel}</label>
+                    {isUsingSaved && (
+                        <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                            <CheckIcon className="w-3 h-3" /> {t.verified}
+                        </span>
+                    )}
+                </div>
                 <div className="relative">
                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
                         <Smartphone className="h-4 w-4" />
@@ -230,7 +241,7 @@ export default function Withdraw() {
                         value={destinationNumber}
                         onChange={(e) => setDestinationNumber(e.target.value)}
                         placeholder={t.destPlaceholder}
-                        className="h-14 pl-10 text-lg border-2 focus-visible:ring-primary rounded-xl bg-gray-50"
+                        className={`h-14 pl-10 text-lg border-2 focus-visible:ring-primary rounded-xl bg-gray-50 ${isUsingSaved ? 'border-green-500/30 bg-green-50/10' : ''}`}
                     />
                 </div>
             </div>

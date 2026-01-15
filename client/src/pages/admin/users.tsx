@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Edit, Trash2, Shield, Plus, KeyRound } from "lucide-react";
+import { Edit, Trash2, Shield, Plus, KeyRound, Snowflake, Wallet, AlertTriangle } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -31,6 +31,8 @@ export default function AdminUsers() {
   const queryClient = useQueryClient();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [resetPasswordUser, setResetPasswordUser] = useState<any>(null);
+  const [freezeUser, setFreezeUser] = useState<any>(null);
+  const [editWalletUser, setEditWalletUser] = useState<any>(null);
   const [page, setPage] = useState(1);
   const LIMIT = 50;
 
@@ -108,6 +110,30 @@ export default function AdminUsers() {
     onError: () => toast({ title: "Error", description: "Failed to reset password", variant: "destructive" })
   });
 
+  const freezeMutation = useMutation({
+    mutationFn: async ({ userId, isFrozen }: { userId: string, isFrozen: boolean }) => {
+      await apiRequest("POST", `/api/admin/users/${userId}/freeze`, { isFrozen });
+    },
+    onSuccess: () => {
+      setFreezeUser(null);
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      toast({ title: "Success", description: "User status updated" });
+    },
+    onError: () => toast({ title: "Error", description: "Failed to update freeze status", variant: "destructive" })
+  });
+
+  const updateWalletMutation = useMutation({
+    mutationFn: async ({ userId, number, provider }: { userId: string, number: string, provider: string }) => {
+      await apiRequest("PUT", `/api/admin/users/${userId}/wallet`, { number, provider });
+    },
+    onSuccess: () => {
+      setEditWalletUser(null);
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      toast({ title: "Success", description: "User wallet updated" });
+    },
+    onError: () => toast({ title: "Error", description: "Failed to update wallet", variant: "destructive" })
+  });
+
   const handleDelete = (id: string) => {
     if (window.confirm("Are you sure you want to permanently delete this user?")) {
       deleteMutation.mutate(id);
@@ -132,6 +158,11 @@ export default function AdminUsers() {
         <div className="flex flex-col">
           <span className="font-bold text-slate-800">{user.username}</span>
           <span className="text-xs text-muted-foreground">{user.name || "No Name"}</span>
+          {user.savedWalletNumber && (
+              <span className="text-[10px] text-green-600 bg-green-50 px-1 rounded w-fit mt-1 flex gap-1 items-center">
+                  <Wallet className="w-3 h-3"/> {user.savedWalletProvider === 'nagad' ? 'Nagad' : 'bKash'}: {user.savedWalletNumber}
+              </span>
+          )}
         </div>
       )
     },
@@ -154,12 +185,13 @@ export default function AdminUsers() {
     {
       header: "Status",
       accessor: (user: any) => {
+        if (user.isFrozen) {
+            return <Badge variant="destructive" className="animate-pulse">FROZEN</Badge>;
+        }
         if (user.isBanned) {
             return <Badge variant="destructive">BANNED ({user.banReason || 'Lazy'})</Badge>;
         }
         const isOnline = user.status === 'online';
-        // Check if "online" but actually idle/stale (e.g. > 5 mins ago)
-        // Ideally backend handles this, but visual cue is nice.
         return (
             <Badge className={isOnline ? "bg-green-100 text-green-700 hover:bg-green-200" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}>
                 {isOnline ? "ONLINE" : "OFFLINE"}
@@ -217,6 +249,24 @@ export default function AdminUsers() {
             title="Edit Role"
           >
             <Edit className="h-4 w-4" />
+          </Button>
+          <Button 
+            size="icon" 
+            variant="ghost" 
+            className="h-8 w-8 text-teal-600 hover:bg-teal-50"
+            onClick={() => setEditWalletUser(user)}
+            title="Edit Wallet Info"
+          >
+            <Wallet className="h-4 w-4" />
+          </Button>
+          <Button 
+            size="icon" 
+            variant="ghost" 
+            className={user.isFrozen ? "h-8 w-8 text-red-500 bg-red-50" : "h-8 w-8 text-sky-500 hover:bg-sky-50"}
+            onClick={() => setFreezeUser(user)}
+            title={user.isFrozen ? "Unfreeze Account" : "Freeze Account"}
+          >
+            <Snowflake className="h-4 w-4" />
           </Button>
           <Button 
             size="icon" 
@@ -333,6 +383,81 @@ export default function AdminUsers() {
             </form>
           </DialogContent>
         </Dialog>
+
+        {/* Freeze User Dialog */}
+        <Dialog open={!!freezeUser} onOpenChange={(open) => !open && setFreezeUser(null)}>
+            <DialogContent className="rounded-2xl">
+                <DialogHeader>
+                    <DialogTitle className="flex gap-2 items-center text-red-600">
+                        <Snowflake className="w-5 h-5"/> 
+                        {freezeUser?.isFrozen ? "Unfreeze Account" : "Freeze Account"}
+                    </DialogTitle>
+                    <DialogDescription>
+                        {freezeUser?.isFrozen 
+                            ? "This will restore the user's ability to withdraw funds and deposit."
+                            : "Freezing this account will prevent any withdrawals or deposits immediately."
+                        }
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="flex justify-end gap-2 mt-4">
+                    <Button variant="outline" onClick={() => setFreezeUser(null)}>Cancel</Button>
+                    <Button 
+                        variant={freezeUser?.isFrozen ? "default" : "destructive"}
+                        onClick={() => freezeUser && freezeMutation.mutate({ userId: freezeUser.id, isFrozen: !freezeUser.isFrozen })}
+                        disabled={freezeMutation.isPending}
+                    >
+                        {freezeMutation.isPending ? "Processing..." : (freezeUser?.isFrozen ? "Unfreeze" : "Freeze")}
+                    </Button>
+                </div>
+            </DialogContent>
+        </Dialog>
+
+        {/* Edit Wallet Dialog */}
+        <Dialog open={!!editWalletUser} onOpenChange={(open) => !open && setEditWalletUser(null)}>
+            <DialogContent className="rounded-2xl">
+                <DialogHeader>
+                    <DialogTitle>Edit User Wallet</DialogTitle>
+                    <DialogDescription>
+                        Manually update the saved wallet number for <strong>{editWalletUser?.username}</strong>.
+                        This action by admin bypasses the 15-day user lock.
+                    </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={(e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.currentTarget);
+                    if (editWalletUser) {
+                        updateWalletMutation.mutate({
+                            userId: editWalletUser.id,
+                            number: formData.get('number') as string,
+                            provider: formData.get('provider') as string
+                        });
+                    }
+                }} className="space-y-4 py-4">
+                     <div className="grid gap-2">
+                        <Label>Provider</Label>
+                        <Select name="provider" defaultValue={editWalletUser?.savedWalletProvider || "bkash"}>
+                            <SelectTrigger className="rounded-xl">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="bkash">bKash</SelectItem>
+                                <SelectItem value="nagad">Nagad</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="grid gap-2">
+                        <Label>Wallet Number</Label>
+                        <Input name="number" defaultValue={editWalletUser?.savedWalletNumber || ""} required className="rounded-xl" minLength={11} />
+                    </div>
+                    <DialogFooter>
+                        <Button type="submit" disabled={updateWalletMutation.isPending} className="w-full rounded-xl">
+                            {updateWalletMutation.isPending ? "Updating..." : "Update Wallet"}
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
+
       </div>
 
       <AdminTable 

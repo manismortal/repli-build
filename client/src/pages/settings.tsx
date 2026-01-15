@@ -33,8 +33,10 @@ export default function Settings() {
   const { toast } = useToast();
   const [username, setUsername] = useState(user?.name || "");
   const [mobile, setMobile] = useState(user?.username || "");
-  const [walletNum, setWalletNum] = useState("");
+  const [walletNum, setWalletNum] = useState(user?.savedWalletNumber || "");
+  const [provider, setProvider] = useState(user?.savedWalletProvider || "bkash");
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isWalletUpdating, setIsWalletUpdating] = useState(false);
 
   const t = {
     title: language === "bn" ? "অ্যাকাউন্ট সেটিংস" : "Account Settings",
@@ -55,9 +57,10 @@ export default function Settings() {
     payoutDesc: language === "bn" ? "যেখানে আপনার মুনাফা পাঠানো হবে।" : "Where your profits are delivered.",
     bkash: language === "bn" ? "বিকাশ অ্যাকাউন্ট" : "bKash Account",
     verifiedWith: language === "bn" ? "উত্তোলনের জন্য যাচাইকৃত" : "Verified for Withdrawals",
-    newWallet: language === "bn" ? "নতুন ওয়ালেট নম্বর" : "New Wallet Number",
-    walletPlace: language === "bn" ? "১১-ডিজিটের বিকাশ নম্বর লিখুন" : "Enter 11-digit bKash number",
+    newWallet: language === "bn" ? "ওয়ালেট নম্বর" : "Wallet Number",
+    walletPlace: language === "bn" ? "১১-ডিজিটের নম্বর লিখুন" : "Enter 11-digit number",
     updateWallet: language === "bn" ? "ওয়ালেট আপডেট করুন" : "UPDATE WALLET",
+    saving: language === "bn" ? "সেভ হচ্ছে..." : "SAVING...",
     twoFactor: language === "bn" ? "টু-ফ্যাক্টর অথেনটিকেশন" : "Two-Factor Authentication",
     twoFactorDesc: language === "bn" ? "উত্তোলনের জন্য উন্নত নিরাপত্তা" : "Enhanced security for withdrawals",
     loginAlert: language === "bn" ? "লগইন সতর্কতা" : "Login Alerts",
@@ -80,6 +83,7 @@ export default function Settings() {
     updateMsg: language === "bn" ? "আপনার পরিবর্তনগুলি এখন প্ল্যাটফর্ম জুড়ে লাইভ।" : "Your changes are now live across the platform.",
     otpTitle: language === "bn" ? "ওটিপি পাঠানো হয়েছে" : "OTP Dispatch",
     otpMsg: language === "bn" ? `${mobile}-এ একটি কোড পাঠানো হয়েছে` : "A code has been sent to " + mobile,
+    walletLocked: language === "bn" ? "ওয়ালেট পরিবর্তন লক করা হয়েছে" : "Wallet Update Locked",
   };
 
   const handleUpdateProfile = (e: React.FormEvent) => {
@@ -93,6 +97,34 @@ export default function Settings() {
         variant: "default"
       });
     }, 1000);
+  };
+
+  const handleUpdateWallet = async () => {
+    if (!walletNum || walletNum.length < 11) {
+      toast({ 
+        title: "Invalid Number", 
+        description: "Please enter a valid wallet number.", 
+        variant: "destructive" 
+      });
+      return;
+    }
+    setIsWalletUpdating(true);
+    try {
+      await apiRequest("POST", "/api/user/wallet", { number: walletNum, provider });
+      await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      toast({ 
+        title: "Success", 
+        description: "Wallet number updated successfully.",
+      });
+    } catch (e: any) {
+      toast({ 
+        title: e.message?.includes("days") ? t.walletLocked : "Update Failed", 
+        description: e.message || "Could not update wallet.", 
+        variant: "destructive" 
+      });
+    } finally {
+      setIsWalletUpdating(false);
+    }
   };
 
   return (
@@ -188,27 +220,51 @@ export default function Settings() {
               <div className="space-y-4">
                 <div className="p-4 rounded-2xl bg-[#e2136e]/5 border border-[#e2136e]/10 flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 bg-[#e2136e] rounded-xl flex items-center justify-center text-white font-bold text-lg">b</div>
+                    <div className="h-10 w-10 bg-[#e2136e] rounded-xl flex items-center justify-center text-white font-bold text-lg">
+                        {user?.savedWalletProvider === 'nagad' ? 'N' : 'B'}
+                    </div>
                     <div>
-                      <p className="text-sm font-bold tracking-tight">{t.bkash}</p>
-                      <p className="text-[11px] text-[#e2136e] font-semibold">{t.verifiedWith}</p>
+                      <p className="text-sm font-bold tracking-tight">{user?.savedWalletProvider ? (user.savedWalletProvider === 'nagad' ? 'Nagad' : 'bKash') : t.bkash}</p>
+                      <p className="text-[11px] text-[#e2136e] font-semibold">{user?.savedWalletNumber ? t.verifiedWith : "Not set"}</p>
                     </div>
                   </div>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                  {user?.walletLastUpdatedAt && (
+                      <span className="text-[10px] text-muted-foreground">Updated: {new Date(user.walletLastUpdatedAt).toLocaleDateString()}</span>
+                  )}
                 </div>
                 
-                <div className="relative group">
-                  <Label className="text-[10px] uppercase font-bold text-muted-foreground ml-1 mb-1 block">{t.newWallet}</Label>
-                  <Input 
-                    value={walletNum} 
-                    onChange={(e) => setWalletNum(e.target.value)}
-                    placeholder={t.walletPlace}
-                    className="h-12 rounded-xl bg-secondary/30 border-transparent focus:border-[#e2136e]/50 transition-all pl-11"
-                  />
-                  <Wallet className="absolute left-4 top-9 h-4 w-4 text-muted-foreground group-focus-within:text-[#e2136e]" />
+                <div className="grid gap-3">
+                    <div>
+                        <Label className="text-[10px] uppercase font-bold text-muted-foreground ml-1 mb-1 block">Provider</Label>
+                        <select 
+                            className="w-full h-12 rounded-xl bg-secondary/30 border-transparent focus:border-[#e2136e]/50 px-4"
+                            value={provider}
+                            onChange={(e) => setProvider(e.target.value)}
+                        >
+                            <option value="bkash">bKash</option>
+                            <option value="nagad">Nagad</option>
+                        </select>
+                    </div>
+
+                    <div className="relative group">
+                    <Label className="text-[10px] uppercase font-bold text-muted-foreground ml-1 mb-1 block">{t.newWallet}</Label>
+                    <Input 
+                        value={walletNum} 
+                        onChange={(e) => setWalletNum(e.target.value)}
+                        placeholder={t.walletPlace}
+                        className="h-12 rounded-xl bg-secondary/30 border-transparent focus:border-[#e2136e]/50 transition-all pl-11"
+                    />
+                    <Wallet className="absolute left-4 top-9 h-4 w-4 text-muted-foreground group-focus-within:text-[#e2136e]" />
+                    </div>
                 </div>
-                <Button variant="outline" className="w-full h-12 rounded-xl font-heading hover:bg-[#e2136e]/5 hover:text-[#e2136e] hover:border-[#e2136e]">
-                  {t.updateWallet}
+                
+                <Button 
+                    variant="outline" 
+                    className="w-full h-12 rounded-xl font-heading hover:bg-[#e2136e]/5 hover:text-[#e2136e] hover:border-[#e2136e]"
+                    onClick={handleUpdateWallet}
+                    disabled={isWalletUpdating}
+                >
+                  {isWalletUpdating ? t.saving : t.updateWallet}
                 </Button>
               </div>
             </CardContent>

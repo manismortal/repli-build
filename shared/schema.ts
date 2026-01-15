@@ -29,7 +29,11 @@ export const users = pgTable("users", {
   phoneNumber: text("phone_number").unique(),
   isAdmin: boolean("is_admin").default(false).notNull(),
   isBanned: boolean("is_banned").default(false).notNull(), // Added for ban logic
+  isFrozen: boolean("is_frozen").default(false).notNull(), // Added for freeze logic (financial)
   banReason: text("ban_reason"), // Reason for the ban (e.g., "lazy")
+  savedWalletNumber: text("saved_wallet_number"), // User's saved withdrawal number
+  savedWalletProvider: text("saved_wallet_provider"), // 'bkash', 'nagad', 'binance'
+  walletLastUpdatedAt: timestamp("wallet_last_updated_at"), // Track 15-day lock
   lastTaskCompletedAt: timestamp("last_task_completed_at"), // Added for inactivity tracking
   lastActiveAt: timestamp("last_active_at"), // Last heartbeat/activity
   status: text("status").default("offline"), // online, offline, idle

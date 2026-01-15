@@ -713,14 +713,114 @@ export async function registerRoutes(
       res.json({ message: "No locked funds available to claim." });
   });
 
+  // --- WALLET MANAGEMENT (NEW) ---
+
+  app.post("/api/user/wallet", async (req, res) => {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Not authenticated" });
+      const user = req.user as User;
+      const { number, provider } = req.body;
+
+      if (!number || !provider || !["bkash", "nagad"].includes(provider)) {
+          return res.status(400).json({ message: "Invalid number or provider. Only bKash and Nagad are supported." });
+      }
+
+      // 15-Day Lock Check
+      if (user.walletLastUpdatedAt) {
+          const lastUpdate = new Date(user.walletLastUpdatedAt);
+          const now = new Date();
+          const diffTime = Math.abs(now.getTime() - lastUpdate.getTime());
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          
+          if (diffDays < 15) {
+              return res.status(403).json({ 
+                  message: `Wallet number can only be changed every 15 days. Please wait ${15 - diffDays} more days.`,
+                  daysRemaining: 15 - diffDays 
+              });
+          }
+      }
+
+      try {
+          await storage.updateUser(user.id, {
+              savedWalletNumber: number,
+              savedWalletProvider: provider,
+              walletLastUpdatedAt: new Date()
+          });
+
+          await storage.createActivityLog({
+              userId: user.id,
+              action: 'wallet_update',
+              details: `Updated wallet to ${provider}: ${number}`
+          });
+
+          res.json({ message: "Wallet number saved successfully." });
+      } catch (e) {
+          res.status(500).json({ message: "Failed to update wallet number." });
+      }
+  });
+
+  app.put("/api/admin/users/:id/wallet", isAdmin, async (req, res) => {
+      const { number, provider } = req.body;
+      if (!number || !provider) return res.status(400).json({ message: "Number and provider required" });
+
+      try {
+          const user = await storage.getUser(req.params.id);
+          if (!user) return res.status(404).json({ message: "User not found" });
+
+          await storage.updateUser(user.id, {
+              savedWalletNumber: number,
+              savedWalletProvider: provider,
+              // Admin override updates timestamp too? Maybe yes, to reset the user's 15 day timer? 
+              // Or no, to let them change it back? 
+              // Usually admin set implies a "reset" or "fix", so updating timestamp makes sense to prevent immediate user change if that was the intent.
+              walletLastUpdatedAt: new Date() 
+          });
+
+          await storage.createActivityLog({
+              userId: user.id,
+              action: 'admin_wallet_update',
+              details: `Admin set wallet to ${provider}: ${number}`
+          });
+
+          res.json({ message: "User wallet updated successfully" });
+      } catch (e) {
+          res.status(500).json({ message: "Failed to update user wallet" });
+      }
+  });
+
+  app.post("/api/admin/users/:id/freeze", isAdmin, async (req, res) => {
+      const { isFrozen } = req.body;
+      if (typeof isFrozen !== 'boolean') return res.status(400).json({ message: "isFrozen (boolean) required" });
+
+      try {
+          const user = await storage.getUser(req.params.id);
+          if (!user) return res.status(404).json({ message: "User not found" });
+
+          await storage.updateUser(user.id, { isFrozen });
+          
+          await storage.createActivityLog({
+              userId: user.id,
+              action: isFrozen ? 'account_freeze' : 'account_unfreeze',
+              details: isFrozen ? "Account frozen by admin" : "Account unfrozen by admin"
+          });
+
+          res.json({ message: `User ${isFrozen ? 'frozen' : 'unfrozen'} successfully` });
+      } catch (e) {
+          res.status(500).json({ message: "Failed to update freeze status" });
+      }
+  });
+
   // --- DEPOSITS ---
   app.post("/api/deposits", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Not authenticated" });
     }
+    const user = req.user as User;
+    if (user.isFrozen) {
+        return res.status(403).json({ message: "Account is frozen. Cannot deposit." });
+    }
     try {
       const data = insertDepositSchema.parse(req.body);
-      const deposit = await storage.createDeposit((req.user as User).id, data);
+      const deposit = await storage.createDeposit(user.id, data);
       res.status(201).json(deposit);
     } catch (error) {
        if (error instanceof z.ZodError) {
@@ -745,6 +845,12 @@ export async function registerRoutes(
     }
 
     const user = req.user as User;
+
+    // Check Freeze Status
+    if (user.isFrozen) {
+        return res.status(403).json({ message: "Account is frozen. Withdrawals disabled." });
+    }
+
     const { amount, source, destinationNumber, method } = req.body;
     
     // Direct Execution: No task completion required for withdrawal as per new requirement.

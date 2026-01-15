@@ -208,3 +208,21 @@ This is a full-stack investment platform web application designed for mobile use
 
 ### **D. Deployment Status**
 *   **Current State:** The codebase is fully updated, tested, and ready for deployment. All recent changes have been pushed to the `main` branch.
+
+## 15. Updates (Jan 15, 2026) - Wallet Management & Security
+
+### **A. User Wallet Management**
+*   **Saved Wallets:** Users can now save a preferred **Nagad** or **bKash** wallet number in their Account Settings.
+*   **Security Lock:** To prevent fraud, the saved wallet number can only be changed **once every 15 days**.
+*   **Withdrawal Optimization:** The withdrawal page now **auto-fills** the saved wallet number and provider, displaying a "Verified" badge for a faster "Rapid Withdraw" experience.
+
+### **B. Admin Controls**
+*   **Account Freeze:** Admins can now **Freeze** and **Unfreeze** user accounts directly from the User Management panel. Frozen users cannot deposit or withdraw funds.
+*   **Wallet Override:** Admins have the authority to manually **view and update** a user's saved wallet number, bypassing the 15-day lock if necessary (e.g., for correcting errors).
+
+### **C. Schema Updates**
+*   **Users Table:** Added `savedWalletNumber`, `savedWalletProvider`, `walletLastUpdatedAt`, and `isFrozen` columns.
+*   **Activity Logs:** Added new log types: `wallet_update`, `admin_wallet_update`, `account_freeze`, `account_unfreeze`.
+
+### **D. Action Required**
+*   **Database Migration:** Run `npm run db:push` to apply the schema changes (adding new columns to the `users` table).
