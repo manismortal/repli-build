@@ -53,7 +53,7 @@ export default function Settings() {
     commit: language === "bn" ? "পরিবর্তন সেভ করুন" : "COMMIT CHANGES",
     payout: language === "bn" ? "পেমেন্ট পদ্ধতি" : "Payout Methods",
     payoutDesc: language === "bn" ? "যেখানে আপনার মুনাফা পাঠানো হবে।" : "Where your profits are delivered.",
-    bkash: language === "bn" ? "বিকাশ অ্যাকাউন্ট" : "bKash Account",
+    wallet: language === "bn" ? "ওয়ালেট" : "Wallet",
     verifiedWith: language === "bn" ? "উত্তোলনের জন্য যাচাইকৃত" : "Verified for Withdrawals",
     manageWallet: language === "bn" ? "ওয়ালেট ম্যানেজ করুন" : "Manage Wallet",
     tapToManage: language === "bn" ? "পরিবর্তন বা আপডেট করতে ট্যাপ করুন" : "Tap to change or update",
@@ -191,10 +191,10 @@ export default function Settings() {
                 <div className="p-4 rounded-2xl bg-[#e2136e]/5 border border-[#e2136e]/10 flex items-center justify-between group-hover:bg-[#e2136e]/10 transition-colors">
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 bg-[#e2136e] rounded-xl flex items-center justify-center text-white font-bold text-lg">
-                        {user?.savedWalletProvider === 'nagad' ? 'N' : 'B'}
+                        {user?.savedWalletProvider ? (user.savedWalletProvider === 'nagad' ? 'N' : 'B') : <Wallet className="h-6 w-6" />}
                     </div>
                     <div>
-                      <p className="text-sm font-bold tracking-tight">{user?.savedWalletProvider ? (user.savedWalletProvider === 'nagad' ? 'Nagad' : 'bKash') : t.bkash}</p>
+                      <p className="text-sm font-bold tracking-tight">{user?.savedWalletProvider ? (user.savedWalletProvider === 'nagad' ? 'Nagad' : 'bKash') : t.wallet}</p>
                       <p className="text-[11px] text-[#e2136e] font-semibold">{user?.savedWalletNumber ? t.verifiedWith : "Not set"}</p>
                     </div>
                   </div>
