@@ -186,7 +186,7 @@ export default function AuthPage() {
             <p className="text-xs text-muted-foreground">
               By continuing, you agree to our Terms of Service and Privacy Policy.
               <br/>
-              This is a mockup demonstration platform.
+              Authorized regional investment platform for logistics operations.
             </p>
           </div>
         </div>
