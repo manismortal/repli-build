@@ -18,6 +18,7 @@ import BinancePayment from "@/pages/binance-payment";
 import PaymentMethods from "@/pages/payment-methods";
 import Settings from "@/pages/settings";
 import Profile from "@/pages/profile";
+import WalletManagement from "@/pages/wallet-management";
 import Notifications from "@/pages/notifications";
 import Terms from "@/pages/terms";
 import Withdraw from "@/pages/withdraw";
@@ -110,9 +111,9 @@ function Router() {
             <Route path="/team" component={Team} />
             <Route path="/referral"><Redirect to="/team" /></Route>
             <Route path="/referrel"><Redirect to="/team" /></Route>
-            <Route path="/settings" component={Settings} />
-            <Route path="/profile" component={Profile} />
-            <Route path="/notifications" component={Notifications} />
+                  <Route path="/settings" component={Settings} />
+                  <Route path="/wallet-management" component={WalletManagement} />
+                  <Route path="/profile" component={Profile} />            <Route path="/notifications" component={Notifications} />
             <Route path="/terms" component={Terms} />
             <Route component={NotFound} />
           </Switch>
