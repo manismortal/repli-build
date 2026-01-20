@@ -13,7 +13,8 @@ import {
   ShieldAlert,
   FileText,
   Smartphone,
-  CheckSquare
+  CheckSquare,
+  Clock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
@@ -34,6 +35,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
     { href: "/admin/withdrawals", icon: ArrowUpRight, label: "Withdrawals" },
     { href: "/admin/packages", icon: Package, label: "Packages" },
     { href: "/admin/tasks", icon: CheckSquare, label: "Tasks" },
+    { href: "/admin/banking", icon: Clock, label: "Banking Hours" },
     { href: "/admin/agents", icon: Smartphone, label: "Agent Numbers" },
     { href: "/admin/reports", icon: FileText, label: "Reports" },
     { href: "/admin/notifications", icon: Bell, label: "Notifications" },

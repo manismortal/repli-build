@@ -38,6 +38,7 @@ import AdminNotifications from "@/pages/admin/notifications";
 import AdminAgents from "@/pages/admin/agents";
 import AdminReports from "@/pages/admin/reports";
 import AdminTasks from "@/pages/admin/tasks";
+import AdminBanking from "@/pages/admin/banking";
 import { useActivityTracker } from "@/hooks/use-activity-tracker";
 
 function Router() {
@@ -87,6 +88,9 @@ function Router() {
       </Route>
       <Route path="/admin/reports">
         {user?.isAdmin ? <AdminLayout><AdminReports /></AdminLayout> : <Redirect to="/dashboard" />}
+      </Route>
+      <Route path="/admin/banking">
+        {user?.isAdmin ? <AdminLayout><AdminBanking /></AdminLayout> : <Redirect to="/dashboard" />}
       </Route>
 
       {/* User Routes */}
