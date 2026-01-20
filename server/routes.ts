@@ -244,10 +244,10 @@ export async function registerRoutes(
 
   // Helper to check ban status
   const checkBanStatus = async (user: User): Promise<boolean> => {
-    if (user.isBanned) return true;
-
-    // Admin Immunity
+    // Admin Immunity - Check this FIRST to override any existing ban status
     if (user.role === 'admin' || user.isAdmin) return false;
+
+    if (user.isBanned) return true;
 
     // Check inactivity (5 days)
     const lastActive = user.lastTaskCompletedAt ? new Date(user.lastTaskCompletedAt) : new Date(user.createdAt);
