@@ -613,6 +613,10 @@ export class MemStorage implements IStorage {
             offerModalBenefits: settings.offerModalBenefits || "Unlock premium features now!",
             offerModalLink: settings.offerModalLink || "/products",
             offerModalCtaText: settings.offerModalCtaText || "Subscribe Now",
+            bankingStartTime: settings.bankingStartTime || "09:00",
+            bankingEndTime: settings.bankingEndTime || "17:00",
+            isDepositEnabled: settings.isDepositEnabled ?? true,
+            isWithdrawalEnabled: settings.isWithdrawalEnabled ?? true,
             updatedAt: now,
         };
     } else {

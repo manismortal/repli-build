@@ -31,6 +31,11 @@ export default function NagadPayment() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [isBankingHours, setIsBankingHours] = useState(false);
 
+  // Fetch Settings
+  const { data: settings } = useQuery<any>({
+    queryKey: ["/api/settings"],
+  });
+
   // Fetch Active Agent
   const { data: agentData, isLoading: agentLoading, error: agentError } = useQuery<any>({
     queryKey: ["/api/agents/nagad"],
@@ -40,18 +45,33 @@ export default function NagadPayment() {
 
   useEffect(() => {
     const checkTime = () => {
+      // Default fallback
+      const start = settings?.bankingStartTime || "09:00";
+      const end = settings?.bankingEndTime || "17:00";
+
       const now = new Date();
       // BD Time is UTC+6
       const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
       const bdTime = new Date(utc + (3600000 * 6));
-      const hours = bdTime.getHours();
-      setIsBankingHours(hours >= 9 && hours < 17);
+      const currentMinutes = bdTime.getHours() * 60 + bdTime.getMinutes();
+
+      const [startH, startM] = start.split(':').map(Number);
+      const [endH, endM] = end.split(':').map(Number);
+      
+      const startMinutes = startH * 60 + startM;
+      const endMinutes = endH * 60 + endM;
+
+      setIsBankingHours(currentMinutes >= startMinutes && currentMinutes < endMinutes);
     };
     
     checkTime();
     const interval = setInterval(checkTime, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [settings]);
+
+  // Check Deposit Enabled
+  const isDepositEnabled = settings?.isDepositEnabled ?? true;
+  const isBlocked = !isBankingHours || !isDepositEnabled;
 
   const handleRefreshAgent = async () => {
       try {
@@ -224,14 +244,14 @@ export default function NagadPayment() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col max-w-md mx-auto w-full p-4 space-y-6">
         
-        {/* Banking Hour Warning */}
-        {!isBankingHours && (
+        {/* Banking Hour / Disabled Warning */}
+        {isBlocked && (
             <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-3">
                 <AlertCircle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
                 <div className="flex flex-col">
-                    <h4 className="text-sm font-bold text-red-700">{t.closedStatus}</h4>
+                    <h4 className="text-sm font-bold text-red-700">{!isDepositEnabled ? (language === "bn" ? "ডিপোজিট বন্ধ" : "Deposits Disabled") : t.closedStatus}</h4>
                     <p className="text-xs text-red-600/80 leading-relaxed">
-                        {t.waitMsg}
+                        {!isDepositEnabled ? (language === "bn" ? "সাময়িক রক্ষণাবেক্ষণের জন্য ডিপোজিট বন্ধ আছে।" : "Deposits are currently disabled for maintenance.") : t.waitMsg}
                     </p>
                 </div>
             </div>
@@ -287,7 +307,7 @@ export default function NagadPayment() {
         </div>
 
         {/* Amount Selection */}
-        <div className={`space-y-3 ${!isBankingHours ? 'opacity-50 pointer-events-none' : ''}`}>
+        <div className={`space-y-3 ${isBlocked ? 'opacity-50 pointer-events-none' : ''}`}>
             <label className="text-sm font-bold text-slate-700 ml-1">{t.selectAmount}</label>
             <div className="grid grid-cols-3 gap-3">
                 {[250, 500, 1500, 2000, 5000].map((val) => (
@@ -320,7 +340,7 @@ export default function NagadPayment() {
         </div>
 
         {/* User Phone Number Input */}
-         <div className={`space-y-3 ${!isBankingHours ? 'opacity-50 pointer-events-none' : ''}`}>
+         <div className={`space-y-3 ${isBlocked ? 'opacity-50 pointer-events-none' : ''}`}>
              <label className="text-sm font-bold text-slate-700 ml-1">{t.userPhoneLabel}</label>
              <div className="relative">
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
@@ -340,7 +360,7 @@ export default function NagadPayment() {
 
 
         {/* Transaction ID Input */}
-        <div className={`space-y-3 ${!isBankingHours ? 'opacity-50 pointer-events-none' : ''}`}>
+        <div className={`space-y-3 ${isBlocked ? 'opacity-50 pointer-events-none' : ''}`}>
              <label className="text-sm font-bold text-slate-700 ml-1">{t.trxIdLabel}</label>
              <div className="relative">
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
@@ -362,10 +382,10 @@ export default function NagadPayment() {
         <div className="pt-4">
             <Button 
                 onClick={handleProceed}
-                disabled={isSubmitting || !agentData || !isBankingHours}
+                disabled={isSubmitting || !agentData || isBlocked}
                 className="w-full h-14 bg-[#ec1c24] hover:bg-[#c0101b] text-white rounded-xl font-bold text-lg shadow-lg shadow-[#ec1c24]/20 transition-all active:scale-[0.98] disabled:opacity-50"
             >
-                {isSubmitting ? t.processing : !isBankingHours ? t.closedStatus : t.proceed}
+                {isSubmitting ? t.processing : isBlocked ? (!isDepositEnabled ? (language === "bn" ? "ডিপোজিট বন্ধ" : "DISABLED") : t.closedStatus) : t.proceed}
             </Button>
         </div>
 

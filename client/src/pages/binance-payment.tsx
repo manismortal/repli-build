@@ -30,6 +30,12 @@ export default function BinancePayment() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
+  // Fetch Settings
+  const { data: settings } = useQuery<any>({
+    queryKey: ["/api/settings"],
+  });
+  const isDepositEnabled = settings?.isDepositEnabled ?? true;
+
   // Fetch Active Agent (Wallet Address)
   const { data: agentData, isLoading: agentLoading } = useQuery<any>({
     queryKey: ["/api/agents/binance"],
@@ -171,8 +177,21 @@ export default function BinancePayment() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col max-w-md mx-auto w-full p-4 space-y-6">
         
+        {/* Disabled Warning */}
+        {!isDepositEnabled && (
+            <div className="bg-red-900/20 border border-red-500/50 rounded-xl p-3 flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
+                <div className="flex flex-col">
+                    <h4 className="text-sm font-bold text-red-400">{language === "bn" ? "ডিপোজিট বন্ধ" : "Deposits Disabled"}</h4>
+                    <p className="text-xs text-red-400/80 leading-relaxed">
+                        {language === "bn" ? "সাময়িক রক্ষণাবেক্ষণের জন্য ডিপোজিট বন্ধ আছে।" : "Deposits are currently disabled for maintenance."}
+                    </p>
+                </div>
+            </div>
+        )}
+
         {/* Wallet Address Section */}
-        <div className="bg-[#2B3139] p-4 rounded-2xl shadow-sm border border-white/5">
+        <div className={`bg-[#2B3139] p-4 rounded-2xl shadow-sm border border-white/5 ${!isDepositEnabled ? 'opacity-50 pointer-events-none' : ''}`}>
             <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 bg-[#FCD535]/10 rounded-full flex items-center justify-center text-[#FCD535]">
                     <Bitcoin className="h-5 w-5" />
@@ -305,10 +324,10 @@ export default function BinancePayment() {
         <div className="pt-4">
             <Button 
                 onClick={handleProceed}
-                disabled={isSubmitting || !agentData}
-                className="w-full h-14 bg-[#FCD535] hover:bg-[#e0bd2f] text-slate-900 rounded-xl font-bold text-lg shadow-lg shadow-[#FCD535]/10 transition-all active:scale-[0.98]"
+                disabled={isSubmitting || !agentData || !isDepositEnabled}
+                className="w-full h-14 bg-[#FCD535] hover:bg-[#e0bd2f] text-slate-900 rounded-xl font-bold text-lg shadow-lg shadow-[#FCD535]/10 transition-all active:scale-[0.98] disabled:opacity-50"
             >
-                {isSubmitting ? t.processing : t.proceed}
+                {isSubmitting ? t.processing : !isDepositEnabled ? (language === "bn" ? "ডিপোজিট বন্ধ" : "DISABLED") : t.proceed}
             </Button>
         </div>
 

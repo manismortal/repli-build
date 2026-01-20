@@ -227,6 +227,9 @@ export async function registerRoutes(
           // 5 Days Inactivity Rule
           const inactiveUsers = await storage.getInactiveUsers(5);
           for (const user of inactiveUsers) {
+              // Admin Immunity
+              if (user.role === 'admin' || user.isAdmin) continue;
+              
               console.log(`Banning user ${user.username} for laziness...`);
               await storage.banUser(user.id, "lazy");
               await storage.createNotification(user.id, "Your account has been banned due to 5 days of inactivity (Laziness).");
@@ -241,6 +244,9 @@ export async function registerRoutes(
   // Helper to check ban status
   const checkBanStatus = async (user: User): Promise<boolean> => {
     if (user.isBanned) return true;
+
+    // Admin Immunity
+    if (user.role === 'admin' || user.isAdmin) return false;
 
     // Check inactivity (5 days)
     const lastActive = user.lastTaskCompletedAt ? new Date(user.lastTaskCompletedAt) : new Date(user.createdAt);
@@ -818,6 +824,13 @@ export async function registerRoutes(
     if (user.isFrozen) {
         return res.status(403).json({ message: "Account is frozen. Cannot deposit." });
     }
+    
+    // Check Global Deposit Status
+    const settings = await storage.getSiteSettings();
+    if (settings && settings.isDepositEnabled === false) {
+        return res.status(503).json({ message: "Deposits are currently disabled by admin." });
+    }
+
     try {
       const data = insertDepositSchema.parse(req.body);
       const deposit = await storage.createDeposit(user.id, data);
@@ -849,6 +862,12 @@ export async function registerRoutes(
     // Check Freeze Status
     if (user.isFrozen) {
         return res.status(403).json({ message: "Account is frozen. Withdrawals disabled." });
+    }
+
+    // Check Global Withdrawal Status
+    const settings = await storage.getSiteSettings();
+    if (settings && settings.isWithdrawalEnabled === false) {
+        return res.status(503).json({ message: "Withdrawals are currently disabled by admin." });
     }
 
     const { amount, source, destinationNumber, method } = req.body;

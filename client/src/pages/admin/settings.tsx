@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Save, Bell, Globe, MessageSquare } from "lucide-react";
+import { Save, Bell, Globe, MessageSquare, DollarSign } from "lucide-react";
 
 export default function AdminSettings() {
   const { toast } = useToast();
@@ -39,12 +39,19 @@ export default function AdminSettings() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const formData = new FormData(e.target as HTMLFormElement);
+    const form = e.target as HTMLFormElement;
+    const formData = new FormData(form);
     const data = Object.fromEntries(formData.entries());
-    mutation.mutate({
+
+    // Handle checkboxes manually
+    const payload = {
         ...data,
-        popupActive: (e.target as HTMLFormElement).popupActive.checked
-    });
+        popupActive: (form.elements.namedItem("popupActive") as HTMLInputElement)?.checked,
+        isDepositEnabled: (form.elements.namedItem("isDepositEnabled") as HTMLInputElement)?.checked,
+        isWithdrawalEnabled: (form.elements.namedItem("isWithdrawalEnabled") as HTMLInputElement)?.checked,
+    };
+
+    mutation.mutate(payload);
   };
 
   if (isLoading) return <div>Loading...</div>;
@@ -57,8 +64,9 @@ export default function AdminSettings() {
       </div>
 
       <Tabs defaultValue="general" className="space-y-6">
-        <TabsList className="bg-card p-1 rounded-xl">
+        <TabsList className="bg-card p-1 rounded-xl w-full sm:w-auto overflow-x-auto flex-nowrap">
           <TabsTrigger value="general" className="rounded-lg gap-2"><Globe className="h-4 w-4" /> General</TabsTrigger>
+          <TabsTrigger value="finance" className="rounded-lg gap-2"><DollarSign className="h-4 w-4" /> Finance</TabsTrigger>
           <TabsTrigger value="popup" className="rounded-lg gap-2"><Bell className="h-4 w-4" /> Popup Notice</TabsTrigger>
           <TabsTrigger value="social" className="rounded-lg gap-2"><MessageSquare className="h-4 w-4" /> Social Links</TabsTrigger>
         </TabsList>
@@ -81,6 +89,65 @@ export default function AdminSettings() {
                     placeholder="Enter scrolling notice text..."
                   />
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="finance">
+            <Card>
+              <CardHeader>
+                <CardTitle>Financial Settings</CardTitle>
+                <CardDescription>Control banking hours and transaction availability.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                
+                <div className="space-y-4 border p-4 rounded-xl">
+                  <h3 className="font-semibold text-lg">Banking Hours</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="bankingStartTime">Start Time (HH:MM)</Label>
+                      <Input 
+                        id="bankingStartTime" 
+                        name="bankingStartTime" 
+                        defaultValue={settings?.bankingStartTime || "09:00"} 
+                        className="rounded-xl" 
+                        placeholder="09:00"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="bankingEndTime">End Time (HH:MM)</Label>
+                      <Input 
+                        id="bankingEndTime" 
+                        name="bankingEndTime" 
+                        defaultValue={settings?.bankingEndTime || "17:00"} 
+                        className="rounded-xl" 
+                        placeholder="17:00"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Times are in Bangladesh Standard Time (BST). Mobile banking channels will be closed outside these hours.</p>
+                </div>
+
+                <div className="space-y-4 border p-4 rounded-xl">
+                  <h3 className="font-semibold text-lg">Transaction Controls</h3>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-base">Enable Deposits</Label>
+                      <p className="text-xs text-muted-foreground">Allow users to create new deposit requests.</p>
+                    </div>
+                    <Switch id="isDepositEnabled" name="isDepositEnabled" defaultChecked={settings?.isDepositEnabled ?? true} />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-base">Enable Withdrawals</Label>
+                      <p className="text-xs text-muted-foreground">Allow users to request withdrawals.</p>
+                    </div>
+                    <Switch id="isWithdrawalEnabled" name="isWithdrawalEnabled" defaultChecked={settings?.isWithdrawalEnabled ?? true} />
+                  </div>
+                </div>
+
               </CardContent>
             </Card>
           </TabsContent>

@@ -1,12 +1,23 @@
 import { storage } from "../storage";
 import { Parser } from "json2csv";
 
-// Helper to check banking hours (9 AM - 5 PM)
-const isBankingHours = () => {
+// Helper to check banking hours (Dynamic)
+const isBankingHours = async () => {
+  const settings = await storage.getSiteSettings();
+  const start = settings?.bankingStartTime || "09:00";
+  const end = settings?.bankingEndTime || "17:00";
+
   const now = new Date();
   const bdTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Dhaka" }));
-  const hours = bdTime.getHours();
-  return hours >= 9 && hours < 17; // 09:00 to 16:59
+  const currentMinutes = bdTime.getHours() * 60 + bdTime.getMinutes();
+
+  const [startH, startM] = start.split(':').map(Number);
+  const [endH, endM] = end.split(':').map(Number);
+  
+  const startMinutes = startH * 60 + startM;
+  const endMinutes = endH * 60 + endM;
+
+  return currentMinutes >= startMinutes && currentMinutes < endMinutes;
 };
 
 // State to hold the current active agent ID for rotation
@@ -19,8 +30,14 @@ export const agentService = {
   // Get currently active agent for a provider (Global / Default)
   async getActiveAgent(provider: "bkash" | "nagad" | "binance") {
     // 1. Check Banking Hours for Fiat
-    if (provider !== "binance" && !isBankingHours()) {
-      return { status: "closed", message: "Banking hours are 9 AM - 5 PM" };
+    if (provider !== "binance") {
+        const isOpen = await isBankingHours();
+        if (!isOpen) {
+            const settings = await storage.getSiteSettings();
+            const start = settings?.bankingStartTime || "09:00";
+            const end = settings?.bankingEndTime || "17:00";
+            return { status: "closed", message: `Banking hours are ${start} - ${end}` };
+        }
     }
 
     const allAgents = await storage.getAgentsByProvider(provider);

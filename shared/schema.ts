@@ -384,6 +384,12 @@ export const siteSettings = pgTable("site_settings", {
   offerModalLink: text("offer_modal_link").default("/products"), // Defaults to products page
   offerModalCtaText: text("offer_modal_cta_text").default("Subscribe Now"),
   
+  // Banking & Transaction Settings
+  bankingStartTime: text("banking_start_time").default("09:00"), // HH:mm format
+  bankingEndTime: text("banking_end_time").default("17:00"), // HH:mm format
+  isDepositEnabled: boolean("is_deposit_enabled").default(true).notNull(),
+  isWithdrawalEnabled: boolean("is_withdrawal_enabled").default(true).notNull(),
+
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
