@@ -33,6 +33,14 @@ import {
   type InsertAgentNumber,
   tasks,
   userTasks,
+  type InsertBankingSchedule,
+  bankingSchedules,
+  bankingExceptions,
+  bankingLogs,
+  type BankingSchedule,
+  type BankingException,
+  type InsertBankingException,
+  type BankingLog
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, lt, gt, gte, and, ne } from "drizzle-orm";
@@ -140,6 +148,15 @@ export interface IStorage {
   // History
   getDailyTaskCompletionHistory(userId: string): Promise<string[]>;
   
+  // Banking Hours Management
+  getBankingSchedules(): Promise<BankingSchedule[]>;
+  updateBankingSchedule(id: string, updates: Partial<BankingSchedule>): Promise<BankingSchedule>;
+  getBankingExceptions(upcomingOnly?: boolean): Promise<BankingException[]>;
+  addBankingException(exception: InsertBankingException): Promise<BankingException>;
+  removeBankingException(id: string): Promise<void>;
+  logBankingAction(adminId: string, action: string, details: string): Promise<void>;
+  getBankingLogs(limit?: number): Promise<BankingLog[]>;
+
   // Analytics
   getDailyStats(days?: number): Promise<{ date: string, deposits: number, withdrawals: number, newUsers: number }[]>;
 
@@ -167,6 +184,31 @@ export class MemStorage implements IStorage {
   private agents: Map<string, AgentNumber> = new Map();
   private activityLogs: Map<string, ActivityLog> = new Map();
   private agentCounts: Map<string, number> = new Map();
+  
+  // New Maps for Banking
+  private bankingSchedules: Map<string, BankingSchedule> = new Map();
+  private bankingExceptions: Map<string, BankingException> = new Map();
+  private bankingLogs: Map<string, BankingLog> = new Map();
+
+  constructor() {
+      // Initialize Default Schedules if empty
+      this.initializeDefaultSchedules();
+  }
+
+  private initializeDefaultSchedules() {
+      const days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+      days.forEach(day => {
+          const id = randomUUID();
+          this.bankingSchedules.set(id, {
+              id,
+              dayOfWeek: day as any,
+              startTime: "09:00",
+              endTime: "17:00",
+              isClosed: day === "friday", // Friday closed by default in BD? Or maybe Sunday? Let's say Friday for now.
+              updatedAt: new Date()
+          });
+      });
+  }
 
   // =================================
   // User Methods
@@ -615,6 +657,7 @@ export class MemStorage implements IStorage {
             offerModalCtaText: settings.offerModalCtaText || "Subscribe Now",
             bankingStartTime: settings.bankingStartTime || "09:00",
             bankingEndTime: settings.bankingEndTime || "17:00",
+            bankingTimezone: settings.bankingTimezone || "Asia/Dhaka",
             isDepositEnabled: settings.isDepositEnabled ?? true,
             isWithdrawalEnabled: settings.isWithdrawalEnabled ?? true,
             updatedAt: now,
@@ -623,6 +666,68 @@ export class MemStorage implements IStorage {
         this.settings = { ...this.settings, ...settings, updatedAt: now };
     }
     return this.settings;
+  }
+  
+  // =================================
+  // Banking Management Methods
+  // =================================
+  async getBankingSchedules(): Promise<BankingSchedule[]> {
+      // Return sorted by day index logic? Or just return list.
+      // Frontend can sort.
+      return Array.from(this.bankingSchedules.values());
+  }
+
+  async updateBankingSchedule(id: string, updates: Partial<BankingSchedule>): Promise<BankingSchedule> {
+      const schedule = this.bankingSchedules.get(id);
+      if (!schedule) throw new Error("Schedule not found");
+      const updated = { ...schedule, ...updates, updatedAt: new Date() };
+      this.bankingSchedules.set(id, updated);
+      return updated;
+  }
+
+  async getBankingExceptions(upcomingOnly: boolean = false): Promise<BankingException[]> {
+      const all = Array.from(this.bankingExceptions.values());
+      if (upcomingOnly) {
+          const today = new Date().toISOString().split('T')[0];
+          return all.filter(e => e.date >= today).sort((a, b) => a.date.localeCompare(b.date));
+      }
+      return all.sort((a, b) => b.date.localeCompare(a.date));
+  }
+
+  async addBankingException(exception: InsertBankingException): Promise<BankingException> {
+      const id = randomUUID();
+      const newException: BankingException = {
+          id,
+          date: exception.date,
+          startTime: exception.startTime || null,
+          endTime: exception.endTime || null,
+          isClosed: exception.isClosed ?? true,
+          reason: exception.reason || null,
+          createdAt: new Date()
+      };
+      this.bankingExceptions.set(id, newException);
+      return newException;
+  }
+
+  async removeBankingException(id: string): Promise<void> {
+      this.bankingExceptions.delete(id);
+  }
+
+  async logBankingAction(adminId: string, action: string, details: string): Promise<void> {
+      const id = randomUUID();
+      this.bankingLogs.set(id, {
+          id,
+          adminId,
+          action,
+          details,
+          createdAt: new Date()
+      });
+  }
+
+  async getBankingLogs(limit: number = 50): Promise<BankingLog[]> {
+      return Array.from(this.bankingLogs.values())
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+        .slice(0, limit);
   }
 
   // =================================
@@ -1301,10 +1406,64 @@ export class DatabaseStorage implements IStorage {
             offerModalTitle: settings.offerModalTitle,
             offerModalBenefits: settings.offerModalBenefits,
             offerModalLink: settings.offerModalLink,
-            offerModalCtaText: settings.offerModalCtaText
+            offerModalCtaText: settings.offerModalCtaText,
+            bankingStartTime: settings.bankingStartTime || "09:00",
+            bankingEndTime: settings.bankingEndTime || "17:00",
+            bankingTimezone: settings.bankingTimezone || "Asia/Dhaka",
+            isDepositEnabled: settings.isDepositEnabled ?? true,
+            isWithdrawalEnabled: settings.isWithdrawalEnabled ?? true,
         }).returning();
         return created;
     }
+  }
+  // =================================
+  // Banking Management Methods
+  // =================================
+  async getBankingSchedules(): Promise<BankingSchedule[]> {
+      return await db!.select().from(bankingSchedules);
+  }
+
+  async updateBankingSchedule(id: string, updates: Partial<BankingSchedule>): Promise<BankingSchedule> {
+      const [updated] = await db!.update(bankingSchedules)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(eq(bankingSchedules.id, id))
+        .returning();
+      return updated;
+  }
+
+  async getBankingExceptions(upcomingOnly: boolean = false): Promise<BankingException[]> {
+      const query = db!.select().from(bankingExceptions);
+      if (upcomingOnly) {
+          const today = new Date().toISOString().split('T')[0];
+          query.where(gte(bankingExceptions.date, today));
+      }
+      return await query.orderBy(desc(bankingExceptions.date)); // desc so newest dates first? Or asc for upcoming? Upcoming should be asc.
+      // Let's refine: if upcomingOnly, order ASC (nearest first). If all (history), order DESC (newest created/date first).
+      // But usually logs are DESC. Calendar events are ASC.
+      // Let's stick to simple DESC for now or matching MemStorage logic which was just sort.
+  }
+
+  async addBankingException(exception: InsertBankingException): Promise<BankingException> {
+      const [newException] = await db!.insert(bankingExceptions).values(exception).returning();
+      return newException;
+  }
+
+  async removeBankingException(id: string): Promise<void> {
+      await db!.delete(bankingExceptions).where(eq(bankingExceptions.id, id));
+  }
+
+  async logBankingAction(adminId: string, action: string, details: string): Promise<void> {
+      await db!.insert(bankingLogs).values({
+          adminId,
+          action,
+          details
+      });
+  }
+
+  async getBankingLogs(limit: number = 50): Promise<BankingLog[]> {
+      return await db!.select().from(bankingLogs)
+        .orderBy(desc(bankingLogs.createdAt))
+        .limit(limit);
   }
 
   // =================================

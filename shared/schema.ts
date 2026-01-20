@@ -384,15 +384,78 @@ export const siteSettings = pgTable("site_settings", {
   offerModalLink: text("offer_modal_link").default("/products"), // Defaults to products page
   offerModalCtaText: text("offer_modal_cta_text").default("Subscribe Now"),
   
-  // Banking & Transaction Settings
-  bankingStartTime: text("banking_start_time").default("09:00"), // HH:mm format
-  bankingEndTime: text("banking_end_time").default("17:00"), // HH:mm format
+  // Banking & Transaction Settings (Global Overrides)
+  bankingTimezone: text("banking_timezone").default("Asia/Dhaka").notNull(),
   isDepositEnabled: boolean("is_deposit_enabled").default(true).notNull(),
   isWithdrawalEnabled: boolean("is_withdrawal_enabled").default(true).notNull(),
-
+  
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const insertSiteSettingsSchema = createInsertSchema(siteSettings);
 export type SiteSettings = typeof siteSettings.$inferSelect;
 export type InsertSiteSettings = z.infer<typeof insertSiteSettingsSchema>;
+
+
+// =================================================================
+// Banking Schedules (Weekly Recurring)
+// =================================================================
+export const dayOfWeekEnum = pgEnum("day_of_week", [
+  "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"
+]);
+
+export const bankingSchedules = pgTable("banking_schedules", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  dayOfWeek: dayOfWeekEnum("day_of_week").notNull(),
+  startTime: text("start_time").notNull(), // HH:mm format (24h)
+  endTime: text("end_time").notNull(), // HH:mm format (24h)
+  isClosed: boolean("is_closed").default(false).notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertBankingScheduleSchema = createInsertSchema(bankingSchedules).pick({
+  dayOfWeek: true,
+  startTime: true,
+  endTime: true,
+  isClosed: true,
+});
+
+export type BankingSchedule = typeof bankingSchedules.$inferSelect;
+export type InsertBankingSchedule = z.infer<typeof insertBankingScheduleSchema>;
+
+// =================================================================
+// Banking Exceptions (Holidays / Special Overrides)
+// =================================================================
+export const bankingExceptions = pgTable("banking_exceptions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  date: text("date").notNull(), // YYYY-MM-DD format
+  startTime: text("start_time"), // HH:mm (Optional, if partial day)
+  endTime: text("end_time"), // HH:mm (Optional)
+  isClosed: boolean("is_closed").default(true).notNull(), // Default to full day closure
+  reason: text("reason"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertBankingExceptionSchema = createInsertSchema(bankingExceptions).pick({
+  date: true,
+  startTime: true,
+  endTime: true,
+  isClosed: true,
+  reason: true,
+});
+
+export type BankingException = typeof bankingExceptions.$inferSelect;
+export type InsertBankingException = z.infer<typeof insertBankingExceptionSchema>;
+
+// =================================================================
+// Banking Logs (Audit Trail)
+// =================================================================
+export const bankingLogs = pgTable("banking_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  adminId: varchar("admin_id").notNull(), // Can be null if system, but usually admin
+  action: text("action").notNull(), // 'update_schedule', 'add_exception', 'toggle_global'
+  details: text("details"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type BankingLog = typeof bankingLogs.$inferSelect;

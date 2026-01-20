@@ -6,11 +6,12 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import bcrypt from "bcrypt";
 import { storage } from "./storage";
-import { insertUserSchema, insertPackageSchema, insertTaskSchema, insertDepositSchema, insertAgentNumberSchema, User } from "@shared/schema";
+import { insertUserSchema, insertPackageSchema, insertTaskSchema, insertDepositSchema, insertAgentNumberSchema, insertBankingExceptionSchema, User } from "@shared/schema";
 import { z } from "zod";
 import { generateReferralCode, processReferralCommissions } from "./referral";
 import rateLimit from "express-rate-limit";
 import { agentService } from "./services/agent";
+import { bankingService } from "./services/banking";
 import { notificationService } from "./services/notification";
 import { broadcastAgentUpdate } from "./ws";
 
@@ -1503,6 +1504,66 @@ export async function registerRoutes(
       };
       broadcastAgentUpdate(counts);
   };
+
+  // --- BANKING HOURS MANAGEMENT ---
+
+  // Public/User Status Check
+  app.get("/api/status/banking", async (req, res) => {
+      const { provider } = req.query; // Optional: 'deposit' or 'withdrawal'
+      const status = await bankingService.getBankingStatus(provider as string);
+      res.json(status);
+  });
+
+  // Admin Routes
+  app.get("/api/admin/banking/schedules", isAdmin, async (req, res) => {
+      const schedules = await storage.getBankingSchedules();
+      res.json(schedules);
+  });
+
+  app.put("/api/admin/banking/schedules/:id", isAdmin, async (req, res) => {
+      try {
+          // Validate input? Partial updates allowed.
+          const updated = await bankingService.updateSchedule((req.user as User).id, req.params.id, req.body);
+          res.json(updated);
+      } catch (e) {
+          res.status(500).json({ message: "Failed to update schedule" });
+      }
+  });
+
+  app.get("/api/admin/banking/exceptions", isAdmin, async (req, res) => {
+      const upcomingOnly = req.query.upcoming === 'true';
+      const exceptions = await storage.getBankingExceptions(upcomingOnly);
+      res.json(exceptions);
+  });
+
+  app.post("/api/admin/banking/exceptions", isAdmin, async (req, res) => {
+      try {
+          const data = insertBankingExceptionSchema.parse(req.body);
+          const created = await bankingService.addException((req.user as User).id, data);
+          res.status(201).json(created);
+      } catch (e) {
+          if (e instanceof z.ZodError) {
+              return res.status(400).json({ message: "Invalid input", details: e.errors });
+          }
+          res.status(500).json({ message: "Failed to add exception" });
+      }
+  });
+
+  app.delete("/api/admin/banking/exceptions/:id", isAdmin, async (req, res) => {
+      try {
+          await storage.removeBankingException(req.params.id);
+          // Log deletion?
+          await storage.logBankingAction((req.user as User).id, 'remove_exception', `Removed exception ${req.params.id}`);
+          res.status(204).end();
+      } catch (e) {
+          res.status(500).json({ message: "Failed to remove exception" });
+      }
+  });
+
+  app.get("/api/admin/banking/logs", isAdmin, async (req, res) => {
+      const logs = await storage.getBankingLogs();
+      res.json(logs);
+  });
 
   return httpServer;
 }
